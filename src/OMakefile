@@ -1,0 +1,53 @@
+
+.PHONY: build run
+.DEFAULT: build
+.SUBDIRS: pa
+
+
+USE_OCAMLFIND= true
+BYTE_ENABLED= false
+NATIVE_ENABLED= true
+OCAMLFLAGS += -g -dtypes -warn-error A
+cmo = $(file pa/pa_partoches.cmo)
+LocalOCamlGeneratedFiles($(cmo))
+
+OCAMLPACKS[]=
+	extlib
+	json-wheel
+	lwt
+	eliom
+	tyxml
+	eliom.server
+
+OCAMLFLAGS+= -thread
+OCAMLFLAGS += -pp 'camlp4o $(cmo)' 
+OCAMLOPTFLAGS+= 
+OCAML_NATIVE_LINK_FLAGS += -pp 'camlp4o $(cmo)'
+OCAMLDEPFLAGS +=  -ppopt pa_extend.cmo -ppopt q_MLast.cmo 
+CAMLP4 = camlp4
+
+ocamlfind ocamlopt $(file pa_exn.mli) -o paoma_exn.cmi -package extlib
+
+src[]=
+	pa_exn
+	main
+	version
+
+version.ml : ../OInstall/version.ml
+	cp $< $@
+
+ELIOMOPT = eliomopt -I ../ -warn-error A -I $(shell ocamlfind query json-wheel) 	-I $(shell ocamlfind query extlib) 
+
+cmxs = $(addsuffix .cmx,$(src))
+cmis = $(addsuffix .cmi,$(src))
+
+partoches.cmxs : $(cmxs) $(cmis)
+	$(ELIOMOPT) -shared -o $@ $(cmxs)
+
+
+launcher = $(OCamlProgram launcher,pa_exn version launcher)
+
+install(bin,partoches.cmxs)
+install(bin,launcher)
+install(etc/css,partoches.css)
+

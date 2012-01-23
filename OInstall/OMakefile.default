@@ -1,0 +1,61 @@
+subdirs[]=
+	OInstall
+	src
+
+
+static. =
+#	# on veut une version >= 3.12
+	ocamlversion=$(shell ocaml -version)
+#	# dans les versions connues, la commande renvoie qqch du genre The Objective Caml toplevel, version x.y.z
+	public.OCaml_major_version=$(int $(nth 5,$(split .,$(ocamlversion))))
+	if $(not $(equal $(OCaml_major_version),3))
+		ConfMsgError($"Invalid ocaml major version : $(OCaml_major_version) (3 is required)")
+	public.OCaml_minor_version=$(int $(nth 6,$(split .,$(ocamlversion))))
+	if $(not $(equal $(OCaml_minor_version),12))
+		ConfMsgError($"Invalid ocaml minor version : $(OCaml_minor_version) (12 is required)")
+	public.OCaml_minor_version=$(int $(nth 7,$(split .,$(ocamlversion))))
+
+
+
+.PHONY: build doc all dist
+.PHONY: install check installcheck
+.PHONY: clean help delivery deliverycheck
+
+
+.DEFAULT: install
+
+
+# Pour les anciennes habitudes
+all: build doc
+install: build
+
+
+public.distdir = $(dir partoches-$(version))
+
+clean:
+	rm -rf $(subdirs)
+	rm -f *.list *.wixobj *.msm *.wxs
+
+installdir=$(dir install)
+
+public.install(path,original_files) =
+	installed_files[] =
+	foreach(original_file, $(original_files))
+		installed_file = $(installdir)/$(path)/$(basename $(original_file))
+		$(installed_file): $(original_file)
+			mkdir(-p $(dirname $@))
+			cp($< $@)
+			chmod(a+x $@)
+		installed_files += $(installed_file)
+		export
+	build : $(installed_files)
+	export .RULE
+	value $(file $(installed_files))
+
+
+# Ensuite on charge les OMakefile des sous-projets
+.SUBDIRS: $(subdirs)
+
+
+mkdir -p install/bin
+

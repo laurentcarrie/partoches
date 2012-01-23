@@ -1,0 +1,33 @@
+.PHONY: build doc 
+.DEFAULT: build
+
+
+sources[] =
+	OMakefile.default
+	OMakeroot.default
+	VERSION
+	bootstrap.osh
+	version.ml.in
+
+# Juste pour avoir la version qq part
+LocalOCamlGeneratedFiles(version.ml)
+%.ml: %.ml.in
+	section
+		stdout = $(fopen $@, wb)
+		fsubst($<)
+		case @VERSION@
+			value $(version)
+		close($(stdout))
+
+install($(EMPTY),Partoches_env.bashrc)
+
+USE_OCAMLFIND = true
+BYTE_ENABLED = false
+NATIVE_ENABLED = true
+OCAMLFLAGS = -g 
+OCAMLCFLAGS =  
+OCAML_BYTE_LINK_FLAGS =
+OCAML_LIB_FLAGS = -g -warn-error 
+OCAMLRUNPARAM = b
+
+

@@ -1,0 +1,28 @@
+table.chords,td.chords,th.chords,tr.chords 
+{
+    border:2px solid black;
+    width:500px ;
+    text-align:center ;
+    border-collapse:collapse ;
+    background-color: honeydew; 
+}
+
+tr.chords2,td.chords2 
+{
+    background-color: #FFE4C4 ;
+}
+
+ol.struct {
+'list-style-type: lower-alpha ;
+}
+
+li.struct {
+    
+    }
+
+span.part-name {
+'    color:red ;
+    font-family:"Times New Roman", Times, serif;
+    font-size: 2em ;
+font-weight: bold ;
+    }
