@@ -1,0 +1,15 @@
+{
+"name":"au clair de la lune",
+"parts": [
+    { 
+	"name" : "couplet" ,
+	"bars" : [
+    [  { "height":"c","color":4 },   { "height":"c","color":4 },  { "height":"c","color":4 },  { "height":"d","color":4 }  ] , 
+    [  { "height":"e","color":2 },   { "height":"d","color":2 } ],
+    [ { "height":"c","color":4 },    { "height":"e","color":4 },    { "height":"d","color":4 },    { "height":"d","color":4 } ],
+    [ { "height":"c","color":1 } ]
+    ]
+        }
+    ],
+"score":[ "couplet","couplet","couplet" ]
+    }

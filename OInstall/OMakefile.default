@@ -1,6 +1,7 @@
 subdirs[]=
 	OInstall
 	src
+	test
 
 
 static. =

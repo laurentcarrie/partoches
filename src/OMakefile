@@ -1,5 +1,5 @@
 
-.PHONY: build run
+.PHONY: build run test
 .DEFAULT: build
 .SUBDIRS: pa
 
@@ -9,7 +9,10 @@ BYTE_ENABLED= false
 NATIVE_ENABLED= true
 OCAMLFLAGS += -g -dtypes -warn-error A
 cmo = $(file pa/pa_partoches.cmo)
-LocalOCamlGeneratedFiles($(cmo))
+
+build : $(cmo)
+
+OCamlGeneratedFiles($(cmo))
 
 OCAMLPACKS[]=
 	extlib
@@ -26,28 +29,38 @@ OCAML_NATIVE_LINK_FLAGS += -pp 'camlp4o $(cmo)'
 OCAMLDEPFLAGS +=  -ppopt pa_extend.cmo -ppopt q_MLast.cmo 
 CAMLP4 = camlp4
 
-ocamlfind ocamlopt $(file pa_exn.mli) -o paoma_exn.cmi -package extlib
+ocamlfind ocamlopt $(file pa_exn.mli) -o pa_exn.cmi -package extlib
 
-src[]=
+src-core[]=
 	pa_exn
-	main
 	version
+	note
+	bar
+	part
+	score
+	song	
+	util
 
-version.ml : ../OInstall/version.ml
+src-server[]=
+	main
+
+version.ml : ../OInstall/version.ml 
 	cp $< $@
 
 ELIOMOPT = eliomopt -I ../ -warn-error A -I $(shell ocamlfind query json-wheel) 	-I $(shell ocamlfind query extlib) 
 
-cmxs = $(addsuffix .cmx,$(src))
-cmis = $(addsuffix .cmi,$(src))
+cmxs = $(addsuffix .cmx,$(src-core) $(src-server))
+cmis = $(addsuffix .cmi,$(src-core) $(src-server))
 
 partoches.cmxs : $(cmxs) $(cmis)
 	$(ELIOMOPT) -shared -o $@ $(cmxs)
 
 
-launcher = $(OCamlProgram launcher,pa_exn version launcher)
+partoches = $(OCamlProgram partoches,pa_exn version launcher)
 
 install(bin,partoches.cmxs)
-install(bin,launcher)
+install(bin,partoches)
 install(etc/css,partoches.css)
+
+build : $(OCamlLibrary partoches-core,$(file $(src-core)))
 

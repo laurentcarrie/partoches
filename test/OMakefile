@@ -1,0 +1,32 @@
+.PHONY: build run test
+.DEFAULT: build
+
+
+USE_OCAMLFIND= true
+BYTE_ENABLED= false
+NATIVE_ENABLED= true
+OCAMLFLAGS += -g -dtypes -warn-error A -I ../src
+cmo = $(file ../src/pa/pa_partoches.cmo)
+OCamlGeneratedFiles($(cmo))
+#build : $(cmo)
+OCAMLPACKS[]=
+	extlib
+	json-wheel	
+	str
+	unix
+
+OCAMLFLAGS+= -thread
+OCAMLOPTFLAGS+= 
+#OCAML_NATIVE_LINK_FLAGS += -pp 'camlp4o $(cmo)'
+OCAMLDEPFLAGS +=  -ppopt pa_extend.cmo -ppopt q_MLast.cmo  -I ../src
+OCAMLFLAGS+= -syntax camlp4o -pp 'camlp4o $(cmo)' 
+CAMLP4 = camlp4
+
+OCAML_LIBS+= ../src/partoches-core
+
+test_prog = $(OCamlProgram test,test)
+
+build : au-clair-de-la-lune.json
+
+test : $(test_prog) 
+	./test au-clair-de-la-lune.json

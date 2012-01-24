@@ -109,6 +109,7 @@ let _ = try
     | true -> ( if Sys.is_directory log_dir then () else __PA__failwith (log_dir ^ " is not a valid directory"))
   in
   let conf = conf mime_types_path port pa_root in
+  let () = printf "using port %d\n" port ; flush stdout in
   let () = Std.output_file ~filename:"pa.conf" ~text:conf in
   let command =  sprintf "ocsigenserver.opt -c %s" ( (Unix.getcwd()) // "pa.conf") in
 
