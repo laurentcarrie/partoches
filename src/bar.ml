@@ -30,6 +30,6 @@ let of_json (j:Json_type.t) : t = __PA__try "of_json" (
 let to_lilypond t = __PA__try "to_lilypond" (
   match t with
     | NL nl ->
-	List.fold_left ( fun acc n -> acc ^ " " ^ (Note.to_lilypond n)) "" nl
+	List.fold_left ( fun acc n -> acc ^ " " ^ (Note.to_lilypond n)  ) "" nl
     | CL _ -> __PA__NOT_IMPLEMENTED__
 ) ;;

@@ -31,18 +31,23 @@ CAMLP4 = camlp4
 
 ocamlfind ocamlopt $(file pa_exn.mli) -o pa_exn.cmi -package extlib
 
+# ATTENTION: la compilation avec eliomopt n'est pas supportee par omake,
+# donc : pas de deps, et pas d'ordre gere
+# mettre l'ordre correct manuellement
 src-core[]=
 	pa_exn
 	version
+	util
 	note
+	instrument
 	bar
 	part
 	score
 	song	
-	util
 
 src-server[]=
 	main
+
 
 version.ml : ../OInstall/version.ml 
 	cp $< $@
@@ -56,7 +61,7 @@ partoches.cmxs : $(cmxs) $(cmis)
 	$(ELIOMOPT) -shared -o $@ $(cmxs)
 
 
-partoches = $(OCamlProgram partoches,pa_exn version launcher)
+partoches = $(OCamlProgram partoches,pa_exn version util launcher)
 
 install(bin,partoches.cmxs)
 install(bin,partoches)

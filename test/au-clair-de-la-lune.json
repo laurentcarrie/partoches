@@ -1,15 +1,40 @@
 {
-"name":"au clair de la lune",
-"parts": [
+  "name" : "au clair de la lune",
+  "instruments": [
+    { "name" : "guitar" , "midi" : "guitar" }
+  ],
+  "parts": [
+
     { 
-	"name" : "couplet" ,
-	"bars" : [
-    [  { "height":"c","color":4 },   { "height":"c","color":4 },  { "height":"c","color":4 },  { "height":"d","color":4 }  ] , 
-    [  { "height":"e","color":2 },   { "height":"d","color":2 } ],
-    [ { "height":"c","color":4 },    { "height":"e","color":4 },    { "height":"d","color":4 },    { "height":"d","color":4 } ],
-    [ { "height":"c","color":1 } ]
-    ]
+      "name" : "couplet" ,
+      "instruments" : [
+	{
+	  "instrument" : "guitar" ,	
+	  "bars" : [	
+	    [  { "height":"c","color":4 },   { "height":"c","color":4 },  { "height":"c","color":4 },  { "height":"d","color":4 }  ] , 
+	    [  { "height":"e","color":2 },   { "height":"d","color":2 } ],
+	    [ { "height":"c","color":4 },    { "height":"e","color":4 },    { "height":"d","color":4 },    { "height":"d","color":4 } ],
+	    [ { "height":"c","color":1 } ]
+	  ]
         }
-    ],
-"score":[ "couplet","couplet","couplet" ]
-    }
+      ]	
+    },
+
+    { 
+      "name" : "refrain" ,
+      "instruments" : [
+	{
+	  "instrument" : "guitar" ,
+	  "bars" : [
+	    [  { "height":"d","color":4 },   { "height":"d","color":4 },  { "height":"d","color":4 },  { "height":"d","color":4 }  ] , 
+	    [  { "height":"a,","color":2 },   { "height":"a,","color":2 } ],
+	    [ { "height":"d","color":4 },    { "height":"c","color":4 },    { "height":"b,","color":4 },    { "height":"a,","color":4 } ],
+	    [ { "height":"g,","color":1 } ]
+	  ]
+        }
+      ]
+    }	
+  ],
+
+  "score":[ "couplet","couplet","refrain","couplet" ]
+}

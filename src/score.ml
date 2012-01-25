@@ -17,5 +17,5 @@ let of_json j parts = __PA__try "of_json" (
     in
       part
   ) ( Br.array j ) in
-    { parts = parts }
+    { parts = parts ; }
 ) ;;

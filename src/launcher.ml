@@ -26,6 +26,9 @@ let conf mime_types_path  port pa_root = sprintf "\n\
 \n\
     <extension findlib-package=\"ocsigenserver.ext.staticmod\"/>\n\
     <extension findlib-package=\"ocsigenserver.ext.redirectmod\"/>\n\
+    <extension findlib-package=\"json-wheel\"/>\n\
+    <extension findlib-package=\"unix\"/>\n\
+    <extension findlib-package=\"str\"/>\n\
 \n\
     <extension findlib-package=\"ocsigenserver.ext.ocsipersist-sqlite\">\n\
       <database file=\"/tmp/ocsidb\"/>\n\
