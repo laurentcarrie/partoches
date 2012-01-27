@@ -28,7 +28,7 @@ html[xmlns] .clearfix { display: block; }
 * html .clearfix { height: 1%; }
 	
 /* Drag drop upload styles */
-#output
+#drop
 {
 	min-width: 940px;
 	min-height: 280px;
@@ -38,7 +38,7 @@ html[xmlns] .clearfix { display: block; }
 	text-align: center;
 	position: relative;
 }
-#output:before
+#drop:before
 {
 	content: "Drag and Drop to upload!";
 	color: #fff;

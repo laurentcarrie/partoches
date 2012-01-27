@@ -10,12 +10,25 @@
 				dropListing;
 			
 			TCNDDU.setup = function () {
+				body = document.getElementsByTagName("body")[0];
 				dropListing = document.getElementById("output-listing01");
-				dropContainer = document.getElementById("output");
+				dropArea = document.getElementById("drop");
 				
-				dropContainer.addEventListener("dragenter", function(event){dropListing.innerHTML = '';event.stopPropagation();event.preventDefault();}, false);
-				dropContainer.addEventListener("dragover", function(event){event.stopPropagation(); event.preventDefault();}, false);
-				dropContainer.addEventListener("drop", TCNDDU.handleDrop, false);
+				if(typeof window["FileReader"] === "function") {
+					// File API interaction goes here
+					dropArea.addEventListener("dragenter", function(event){event.stopPropagation();event.preventDefault();}, false);
+					dropArea.addEventListener("dragover", function(event){event.stopPropagation();event.preventDefault();}, false);
+					dropArea.addEventListener("drop", function(event){alert("Your browser supports the File API");event.stopPropagation();event.preventDefault();}, false);
+				} else {
+					// No File API support fallback to file input
+					fileInput.type = "file";
+					fileInput.id = "filesUpload";
+					fileInput.setAttribute("multiple",true);
+					dropArea.appendChild(fileInput);
+					fileInput.addEventListener("change", TCNDDU.handleDrop, false);
+				}
+				body.addEventListener("dragenter",TCNDDU.handleDrag, false);
+				body.addEventListener("dragend",TCNDDU.handleDrag, false);
 			};
 			
 			TCNDDU.uploadProgressXHR = function (event) {

@@ -159,7 +159,7 @@ let _ =
       )
 	(body [
 
-	  div ~a:[a_id "output" ; a_class ["clearfix"]] [
+	  div ~a:[a_id "drop" ; a_class ["clearfix"]] [
 	    ul ~a:[a_id "output-listing01"] [] 
 	  ] ;
 	  (*
