@@ -13,7 +13,7 @@ tr.chords2,td.chords2
 }
 
 ol.struct {
-'list-style-type: lower-alpha ;
+/* list-style-type: lower-alpha ; */
 }
 
 li.struct {
@@ -21,7 +21,7 @@ li.struct {
     }
 
 span.part-name {
-'    color:red ;
+/*     color:red ; */
     font-family:"Times New Roman", Times, serif;
     font-size: 2em ;
 font-weight: bold ;
