@@ -65,7 +65,8 @@ partoches = $(OCamlProgram partoches,pa_exn version util launcher)
 
 install(bin,partoches.cmxs)
 install(bin,partoches)
-install(etc/css,partoches.css)
+install(staticdir/css,partoches.css upload.css upload2.css filedrag.css)
+install(staticdir/js,upload.js filedrag.js)
 
 build : $(OCamlLibrary partoches-core,$(file $(src-core)))
 

@@ -4,10 +4,24 @@ open Printf
 
 type t = {
   name : string ;
+  nbars : int ;
   bars : ( Instrument.t * Bar.t list ) list ;
 }
 
-
+let fill_with_rest instruments t = __PA__try "fill_with_rest" (
+  let bars = List.map ( fun (i,bars) ->
+    let gap = t.nbars - List.length bars in
+    let () = if gap < 0 then __PA__failwith "invariant error" else () in
+    let bars = bars @ (List.init gap ( fun _ -> Bar.empty_bar)) in
+      i,bars
+  ) t.bars in
+  let bars =  List.fold_left ( fun acc i ->
+    match List.find ( fun (o,_) -> o = i ) bars with
+      | Some b -> b :: acc
+      | None -> (i,List.init t.nbars ( fun _ -> Bar.empty_bar)) :: acc
+  ) [] instruments in
+    { t with bars=List.rev bars }
+) ;;
 
 
 let of_json instruments j = __PA__try "of_json" (
@@ -22,6 +36,7 @@ let of_json instruments j = __PA__try "of_json" (
       let j = Br.objekt j in 
       let table = Br.make_table j in
       let instrument = Br.string ( Br.field table "instrument" ) in
+      let () = log Debug "bar, instrument : %s" instrument in
       let instrument = match List.find ( fun i -> i.Instrument.name = instrument ) instruments with
 	| Some i -> i
 	| None -> __PA__failwith ("no such instrument " ^ instrument)
@@ -30,7 +45,11 @@ let of_json instruments j = __PA__try "of_json" (
 	(instrument,bars)
   ) (Br.array (Br.field table "instruments")) in 
 
-    { name = name ; bars = bars }
+  let nbars = List.fold_left ( fun nbars (_,l) ->
+    if (nbars > List.length l) then nbars else List.length l
+  ) 0 bars in
+  let t = { name = name ; nbars = nbars ; bars = bars } in
+    fill_with_rest instruments t
 ) ;;
 
 

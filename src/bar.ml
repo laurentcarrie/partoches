@@ -6,6 +6,8 @@ type t =
     | CL of Chord.t list 
 
 
+let empty_bar = NL [ { Note.height = "r" ; color = 1 } ]
+
 let to_string t = 
   match t with
     | NL nl -> List.fold_left ( fun acc n -> sprintf "%s ; %s %d" acc n.Note.height n.Note.color) "" nl

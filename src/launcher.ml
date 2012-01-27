@@ -5,6 +5,7 @@ module Bu = Json_type.Build
 let (//) = Filename.concat
 
 let log_dir = "ocsigen-logs"
+let upload_dir = (Unix.getcwd()) // "upload-dir" 
 
 let conf mime_types_path  port pa_root = sprintf "\n\
 <ocsigen> \n\
@@ -18,6 +19,7 @@ let conf mime_types_path  port pa_root = sprintf "\n\
     <group></group>\n\
     <commandpipe>/tmp/ocsigen_command</commandpipe>\n\
     <mimefile>%s/mime.types</mimefile>\n\
+    <uploaddir>%s</uploaddir>\n\
 \n\
     <charset>utf-8</charset>\n\
     <debugmode/>\n\
@@ -49,7 +51,7 @@ let conf mime_types_path  port pa_root = sprintf "\n\
   </server>\n\
 \n\
 </ocsigen>\n\
-" port mime_types_path pa_root pa_root pa_root
+" port mime_types_path upload_dir pa_root pa_root pa_root
 
 
 let getenv s = 
@@ -107,10 +109,15 @@ let _ = try
     | "Win32" -> __PA__NOT_IMPLEMENTED__
     | s -> __PA__failwith ("no such os : " ^ s)
   in
-  let () = match Sys.file_exists log_dir with
-    | false -> Unix.mkdir log_dir 0o777
-    | true -> ( if Sys.is_directory log_dir then () else __PA__failwith (log_dir ^ " is not a valid directory"))
+  let make_dir p =
+    let () = match Sys.file_exists p with
+      | false -> Unix.mkdir p 0o777
+      | true -> ( if Sys.is_directory p then () else __PA__failwith (p ^ " is not a valid directory"))
+    in
+      ()
   in
+  let () = make_dir log_dir in
+  let () = make_dir upload_dir in
   let conf = conf mime_types_path port pa_root in
   let () = printf "using port %d\n" port ; flush stdout in
   let () = Std.output_file ~filename:"pa.conf" ~text:conf in

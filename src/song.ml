@@ -34,10 +34,13 @@ let to_lilypond song = __PA__try "to_lilypond" (
       \\new Staff {\n\
         \\tempo 4 = 180 \n\
 	\\clef \"treble_8\"\n\
-	\\set Staff.midiInstrument = #\"acoustic guitar (steel)\"\n\
-	\\set Staff.instrumentName = #\"guitar\"\n\
+	\\set Staff.midiInstrument = #\"%s\"\n\
+	\\set Staff.instrumentName = #\"%s\"\n\
 %s \n\
-      }" (List.fold_left ( fun acc part -> acc ^ "\n\\" ^ (part.Part.name) ^ (instrument.Instrument.name)) "" song.score.Score.parts)
+      }" 
+      instrument.Instrument.midi
+      instrument.Instrument.name
+      (List.fold_left ( fun acc part -> acc ^ "\n\\" ^ (part.Part.name) ^ (instrument.Instrument.name)) "" song.score.Score.parts)
   )  in
 
   let content = sprintf "\n\
@@ -46,27 +49,25 @@ let to_lilypond song = __PA__try "to_lilypond" (
 #(set-default-paper-size \"a4\")\n\
 \n\
 \\header {\n\
-  title = \"%s\"\n\
+\ttitle = \"%s\"\n\
 }\n\
 \n\
 %s
-  \\score {\n\
-<<
+\\score {\n\
+\t<<\n\
 %s
->>
-
-    \n\
-    \\midi{\n\
+\t>>\n\
+\\midi{\n\
 \n\
-    }\n\
+}\n\
 \n\
-    \\layout{\n\
-      ragged-right = ##t\n\
-      indent = 4\\cm\n\
-      short-indent = 2\\cm\n\
-    }\n\
+\\layout{\n\
+\tragged-right = ##t\n\
+\tindent = 4\\cm\n\
+\tshort-indent = 2\\cm\n\
+}\n\
 \n\
-	}\n\
+}\n\
 " 
       song.name
       (List.fold_left ( fun acc part -> acc ^ "\n" ^ (Part.to_lilypond part)) "" song.parts)
