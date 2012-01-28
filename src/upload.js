@@ -93,14 +93,16 @@ var TCNDDU = TCNDDU || {};
 			     return function(e) {
 				 // Render thumbnail.
 				 var span = document.createElement('span');
-				 span.innerHTML = ['<img class="thumb" src="', e.target.result,
-						   '" title="', theFile.name, '"/>'].join('');
+				 //span.innerHTML = ['<img class="thumb" src="', e.target.result,
+				 //	   '" title="', theFile.name, '"/>'].join('');
+				 span.innerHTML = ['<a href="work/',theFile.name,'">',theFile.name,'</a>','<br/>'].join('') ;
 				 document.getElementById('output-listing01').insertBefore(span, null);
+				 xhr.sendAsBinary(e.target.result) ;
 			     };
 			 })(file);
 
 	// Read in the image file as a data URL.
-	reader.readAsDataURL(file);
+	reader.readAsBinaryString(file);
 	// xhr.sendAsBinary(file.getAsBinary());
     };
 			
@@ -110,6 +112,8 @@ var TCNDDU = TCNDDU || {};
 	imgPreviewFragment = document.createDocumentFragment(),
 	count = files.length,
 	domElements;
+
+	console.log("count = %d",count) ;
 					
 	event.stopPropagation();
 	event.preventDefault();

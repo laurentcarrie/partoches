@@ -106,7 +106,7 @@ let _ =
 	return ("ok","application/text") 
   ) in
 
-  let _ = Eliom_output.Html5.register_post_service ~fallback ~post_params:(Eliom_parameters.raw_post_data) (
+  let _ = Eliom_output.Text.register_post_service ~fallback ~post_params:(Eliom_parameters.raw_post_data) (
     fun () file ->  
       let (a,b) = file in 
       let (c,d) = match a with
@@ -128,21 +128,15 @@ let _ =
 	  | Some stream -> Ocsigen_stream.string_of_stream max_size (Ocsigen_stream.get stream)
       in
 
-	(l
-	  >>= fun s -> 
-	    log Debug "uploaded file of size %d" (String.length s) ;
-	    return (
-	      html (
-		head (title (pcdata ("partoche"))) [
-		  css_link ~uri:(make_uri (static_dir ()) ["partoches.css"]) () ; 
-		]
-	      )
-		(body [
-		]
-		)
-	    )
-	)) in
-    ()
+      (l
+       >>= fun data -> 
+       log Debug "uploaded file of size %d" (String.length data) ;
+       let song = Song.of_json (Json_io.json_of_string data) in
+       let () = Song.output song in
+      return (
+	Std.input_file ~bin:true (Song.midi_filename song),"audio/midi") 
+  )) in
+() ;;
 
 
 let _ =
