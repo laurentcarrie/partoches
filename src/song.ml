@@ -67,8 +67,6 @@ let to_lilypond song = __PA__try "to_lilypond" (
   let content = sprintf "\n\
 \\version \"2.12.3\"\n\
 \\include \"predefined-guitar-fretboards.ly\" \n\
-#(set-default-paper-size \"a4\")\n\
-\n\
 \\header {\n\
 \ttitle = \"%s\"\n\
 }\n\
@@ -83,9 +81,6 @@ let to_lilypond song = __PA__try "to_lilypond" (
 }\n\
 \n\
 \\layout{\n\
-\tragged-right = ##t\n\
-\tindent = 4\\cm\n\
-\tshort-indent = 2\\cm\n\
 }\n\
 \n\
 }\n\

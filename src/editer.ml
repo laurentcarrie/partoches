@@ -10,16 +10,9 @@ open ExtList
 open Printf
 
 
-let image_file = Eliom_output.Files.register_service ~path:["score-img"] ~get_params:(Eliom_parameters.string "name") (
-  fun (name) () ->
-    return (
-      let filename = Str.global_replace (Str.regexp " ") "-" name in
-      (Unix.getcwd()) // (filename ^ ".png")
-    )
-) ;;
 
 let _ =
-  let fallback = Eliom_output.Text.register_service ~path:["voir"] ~get_params:(Eliom_parameters.unit) ( 
+  let fallback = Eliom_output.Text.register_service ~path:["editer"] ~get_params:(Eliom_parameters.unit) ( 
     fun () () -> 
       log Normal "no get here !" ;
       let () = __PA__failwith "NO GET here" in
@@ -54,11 +47,6 @@ let _ =
 		  | hd::tl -> (
 		    table  ~a:[a_class ["song-score"]]  (make_tr hd) (List.map make_tr tl))
 	     ] ;
-	      div ~a:[a_id "song-score-img"] [
-		img ~alt:"sore-image"
-		~src:(Eliom_output.Xhtml.make_uri ~service:(image_file) song.Song.name )
-		  ()
-	      ]
 	    ]))
 	  
       )) in

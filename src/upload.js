@@ -115,7 +115,8 @@ var TCNDDU = TCNDDU || {};
 				 // span.innerHTML = ['<a href="midi2?name=',escape(theFile.name),'&_=x">',theFile.name,'</a>','<br/>'].join('') ;
 				 span.innerHTML = ['<span>',theFile.name,'</span>',
 						   '<form method="POST" accept="audio/midi" action="midi"><input type="hidden" name="name" value="',escape(theFile.name),'"/>','<input type="submit" value="midi"/>','</form>',
-						   '<form method="POST" accept="application/html" action="voir"><input type="hidden" name="name" value="',escape(theFile.name),'"/>','<input type="submit" value="voir"/>','</form>'
+						   '<form method="POST" accept="application/html" action="voir"><input type="hidden" name="name" value="',escape(theFile.name),'"/>','<input type="submit" value="voir"/>','</form>',
+						   '<form method="POST" accept="application/html" action="editer"><input type="hidden" name="name" value="',escape(theFile.name),'"/>','<input type="submit" value="editer"/>','</form>'
 						   ].join('') ;
 				 document.getElementById('output-listing01').insertBefore(span, null);
 			     };
