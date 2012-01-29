@@ -16,3 +16,10 @@ let of_json (j:Json_type.t) : t = __PA__try "of_json" (
 ) ;;
 
 
+let to_json t = __PA__try "to_json" (
+  let module Bu = Json_type.Build in
+  Bu.objekt [
+    "name",Bu.string t.name ;
+    "midi",Bu.string t.midi ;
+  ]
+) ;;

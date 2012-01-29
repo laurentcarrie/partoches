@@ -30,8 +30,8 @@ html[xmlns] .clearfix { display: block; }
 /* Drag drop upload styles */
 #drop
 {
-	min-width: 940px;
-	min-height: 280px;
+	min-width: 200px;
+	min-height: 80px;
 	padding: 10px;
 	border: 2px dotted #fff;
 	-moz-border-radius: 15px;
@@ -40,9 +40,9 @@ html[xmlns] .clearfix { display: block; }
 }
 #drop:before
 {
-	content: "Drag and Drop to upload!";
+	content: "Tirez vos fichiers ici pour les uploader!";
 	color: #fff;
-	font-size: 50px;
+	font-size: 10px;
 	font-weight: bold;
 	opacity: 0.5;
 	text-shadow: 1px 1px #000;

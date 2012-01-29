@@ -1,3 +1,18 @@
+// trouve sur le web 
+// http://javascript0.org/wiki/Portable_sendAsBinary
+XMLHttpRequest.prototype.sendAsBinary = function(datastr) {
+    function byteValue(x) {
+        return x.charCodeAt(0) & 0xff;
+    }
+    var ords = Array.prototype.map.call(datastr, byteValue);
+    var ui8a = new Uint8Array(ords);
+    this.setRequestHeader("Content-type","application/text");
+    this.send(ui8a.buffer);
+}
+
+
+
+
 // trouve sur le web :
 // http://www.thecssninja.com/javascript/drag-and-drop-upload
 //
@@ -16,7 +31,7 @@ var TCNDDU = TCNDDU || {};
 			
 
 	// Check for the various File API support.
-	if (window.File && window.FileReader && window.FileList && window.Blob) {
+	if (window.File && window.FileReader && window.FileList && window.Blob && window.XMLHttpRequest ) {
 	    // Great success! All the File APIs are supported.
 	} else {
 	    alert('The File APIs are not fully supported in this browser.');
@@ -66,13 +81,14 @@ var TCNDDU = TCNDDU || {};
 			
     TCNDDU.processXHR = function (file, index) {
 	var xhr = new XMLHttpRequest(),
-	container = document.getElementById("item"+index),
+	// container = document.getElementById("item"+index),
 	fileUpload = xhr.upload,
 	progressDomElements = [
 			       document.createElement('div'),
 			       document.createElement('p')
-			       ];
-
+	  ];
+	
+	/*
 	progressDomElements[0].className = "progressBar";
 	progressDomElements[1].textContent = "0%";
 	progressDomElements[0].appendChild(progressDomElements[1]);
@@ -83,7 +99,7 @@ var TCNDDU = TCNDDU || {};
 	fileUpload.addEventListener("progress", TCNDDU.uploadProgressXHR, false);
 	fileUpload.addEventListener("load", TCNDDU.loadedXHR, false);
 	fileUpload.addEventListener("error", TCNDDU.uploadError, false);
-
+	*/
 	xhr.open("POST", "upload-file") ;
 	xhr.overrideMimeType('text/plain; charset=x-user-defined-binary');
 	var reader = new FileReader();
@@ -92,12 +108,16 @@ var TCNDDU = TCNDDU || {};
 	reader.onload = (function(theFile) {
 			     return function(e) {
 				 // Render thumbnail.
+				 xhr.sendAsBinary(e.target.result) ;
 				 var span = document.createElement('span');
 				 //span.innerHTML = ['<img class="thumb" src="', e.target.result,
 				 //	   '" title="', theFile.name, '"/>'].join('');
-				 span.innerHTML = ['<a href="work/',theFile.name,'">',theFile.name,'</a>','<br/>'].join('') ;
+				 // span.innerHTML = ['<a href="midi2?name=',escape(theFile.name),'&_=x">',theFile.name,'</a>','<br/>'].join('') ;
+				 span.innerHTML = ['<span>',theFile.name,'</span>',
+						   '<form method="POST" accept="audio/midi" action="midi"><input type="hidden" name="name" value="',escape(theFile.name),'"/>','<input type="submit" value="midi"/>','</form>',
+						   '<form method="POST" accept="application/html" action="voir"><input type="hidden" name="name" value="',escape(theFile.name),'"/>','<input type="submit" value="voir"/>','</form>'
+						   ].join('') ;
 				 document.getElementById('output-listing01').insertBefore(span, null);
-				 xhr.sendAsBinary(e.target.result) ;
 			     };
 			 })(file);
 
@@ -126,6 +146,7 @@ var TCNDDU = TCNDDU || {};
 			   ];
 				
 	    // domElements[2].src = files[i].getAsDataURL(); // base64 encodes local file(s)
+	    /*
 	    domElements[2].width = 300;
 	    domElements[2].height = 200;
 	    domElements[1].appendChild(domElements[2]);
@@ -135,7 +156,7 @@ var TCNDDU = TCNDDU || {};
 	    imgPreviewFragment.appendChild(domElements[0]);
 					
 	    dropListing.appendChild(imgPreviewFragment);
-					
+	    */			
 	    TCNDDU.processXHR(files.item(i), i);
 	}
     };

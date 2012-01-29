@@ -33,3 +33,33 @@ h1.song-title {
 }
 
 
+td.error {
+color : red
+}
+
+
+
+/* score */
+  ul.song-score {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+/*    position: absolute; */
+    top: 2em;
+    left: 1em;
+    width: 2-em ;
+/*     border-right: 1em solid black  */
+}
+
+li.song-score {
+		color : green 
+}
+
+span.song-score-part-nbars {
+	content : "mesures" ;
+	font-size : 0.5em ;
+}
+
+span.song-score-part-from {
+	font-size : 0.5em ;
+}

@@ -47,6 +47,7 @@ src-core[]=
 
 src-server[]=
 	main
+	voir
 
 
 version.ml : ../OInstall/version.ml 

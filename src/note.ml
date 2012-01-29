@@ -24,6 +24,13 @@ let of_json j  = __PA__try "of_json" (
 )
   
 
+let to_json t = __PA__try "to_json" (
+  let module Bu = Json_type.Build in
+  Bu.objekt [
+    "height",Bu.string t.height ;
+    "color",Bu.int t.color ;
+  ]
+) ;;
 
 let to_lilypond t = __PA__try "to_lilypond" (
   sprintf "%s%d" t.height t.color

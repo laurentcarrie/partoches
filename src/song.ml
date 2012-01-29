@@ -21,11 +21,32 @@ let of_json j = __PA__try "of_json" (
     { name=name ; score=score ; parts=parts ; instruments=instruments ; }
 ) ;;
 
+let to_json t = __PA__try "of_json" (
+  let module Bu = Json_type.Build in
+  let j = Bu.objekt [
+    "name",Bu.string t.name ;
+    "instruments",Bu.list Instrument.to_json t.instruments ;
+    "parts",Bu.list Part.to_json t.parts ;
+    "score",Score.to_json t.score ;
+  ] in
+  j
+) ;;
+
 let of_file filename = __PA__try "of_file" (
   let j = Json_io.load_json filename in
     of_json j
 ) ;;
 
+let to_file song filename = __PA__try "to_file" (
+  let j = to_json song in
+  Json_io.save_json filename j
+) ;;
+
+let save song path = __PA__try "save" (
+  let name = Str.global_replace (Str.regexp " ") "-" song.name in
+  let filename = path // (name ^ ".json") in
+  to_file song filename
+) ;;
 
 let to_lilypond song = __PA__try "to_lilypond" (
 
@@ -40,7 +61,7 @@ let to_lilypond song = __PA__try "to_lilypond" (
       }" 
       instrument.Instrument.midi
       instrument.Instrument.name
-      (List.fold_left ( fun acc part -> acc ^ "\n\\" ^ (part.Part.name) ^ (instrument.Instrument.name)) "" song.score.Score.parts)
+      (List.fold_left ( fun acc (part,_) -> acc ^ "\n\\" ^ (part.Part.name) ^ (instrument.Instrument.name)) "" song.score.Score.parts)
   )  in
 
   let content = sprintf "\n\

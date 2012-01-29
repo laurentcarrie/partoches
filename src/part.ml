@@ -52,6 +52,20 @@ let of_json instruments j = __PA__try "of_json" (
     fill_with_rest instruments t
 ) ;;
 
+let to_json t = __PA__try "to_json" (
+let module Bu = Json_type.Build in
+let j = Bu.objekt [
+  "name", Bu.string t.name ;
+  "nbars",Bu.int t.nbars ;
+  "instruments",Bu.array ( List.map ( fun (i,bars) ->
+    Bu.objekt [
+      "instrument",Bu.string i.Instrument.name ;
+    "bars",Bu.list Bar.to_json bars
+  ]) t.bars) ;
+] in
+j
+);;
+
 
 let to_lilypond t = __PA__try "to_lilypond" (
   List.fold_left ( fun acc (instrument,bars) -> sprintf "%s\n\

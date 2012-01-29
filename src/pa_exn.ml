@@ -19,28 +19,26 @@ let clear_stack () =
   msg_stack := []
 ;;
 
-let print_stack () =
+let print_stack e =
   printf "stack of size %d\n" (List.length !msg_stack) ;	
+  printf "initial : %s\n" (Printexc.to_string e) ;
   List.iteri ( fun i (filename,line,msg) -> 
     printf "%2d : %s:%d -> %s\n" i filename line msg ) (List.rev !msg_stack) ;
   flush stdout
 ;;
     
 
-let string_of_stack () =
+let string_of_stack e =
   let (_,ret) = List.fold_left ( fun (i,acc) (filename,line,msg) -> 
     i+1,sprintf "%s%2d : %s:%d -> %s\n" acc i filename line msg 
   ) (0,sprintf "stack of size %d\n" (List.length !msg_stack)) (List.rev !msg_stack) in
-    ret
+sprintf "%s\n%s" (Printexc.to_string e) ret
 ;;
     
-let html_string_of_stack () =
-  let (_,ret) = List.fold_left ( fun (i,acc) (filename,line,msg) -> 
-    i+1,sprintf "%s%2d : %s:%d -> %s<br/>" acc i filename line msg 
-  ) (0,sprintf "stack of size %d<br/>" (List.length !msg_stack)) (List.rev !msg_stack) in
-    ret
-;;
-    
+let html_string_of_stack e = 
+  let s = string_of_stack e in
+  s
+
 
 let ref_level = ref 0 ;;
 let ref_debug = ref false

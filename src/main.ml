@@ -5,11 +5,52 @@ open HTML5.M
 open Eliom_services
 open Eliom_parameters
 open Eliom_output.Html5
-
+open ExtList
 
 open Printf
 
 let _ = set_log_level Debug
+
+
+let _ = Eliom_output.set_exn_handler
+   (fun e -> match e with
+    | Eliom_common.Eliom_404 ->
+        Eliom_output.Html5.send ~code:404
+          (html
+             (head (title (pcdata "")) [])
+             (body [h1 [pcdata "Partoches..."];
+                    p [pcdata "Page not found"];
+		    p [pcdata (Printexc.to_string e)]]))
+    | Eliom_common.Eliom_Wrong_parameter ->
+        Eliom_output.Html5.send ~code:500
+          (html
+             (head (title (pcdata "")) [])
+             (body [h1 [pcdata "Partoches"];
+                    p [pcdata "Wrong parameters"]]))
+    | e -> 
+      let stack = Pa_exn.get_stack () in
+      log Normal "size of stack : %d" (List.length stack) ;
+      let () = List.iter ( fun (msg,line,file) -> log Normal "%s:%d -> %s" file line msg ) stack in
+      Eliom_output.Html5.send ~code:500
+	(html
+	   (head (title (pcdata "Erreur"))[
+	     css_link ~uri:(make_uri (static_dir ()) ["css";"partoches.css"]) () ; 
+	   ])
+	   (body [
+	     h1  [pcdata "Error caught"];
+	     pcdata (Printexc.to_string e) ;
+	     let make_row (msg,line,file) =
+	       tr [
+		 td ~a:[a_class ["error"]] [ pcdata file ] ;
+		 td ~a:[a_class ["error"]] [ pcdata (string_of_int line) ] ;
+		 td ~a:[a_class ["error"]] [ pcdata msg ]
+	       ] in
+	     match stack with
+	       | [] -> pcdata "" 
+	       | hd::tl -> Pa_exn.clear_stack() ; table (make_row hd) (List.map make_row tl) ;
+	    ])
+	))
+
 
 let _ =
   let main_s = Eliom_services.service ~path:[""] ~get_params:unit () in
@@ -38,14 +79,33 @@ let _ =
 	return ("ok","application/text") 
   ) in
 
-  let _ = Eliom_output.Text.register_post_service ~fallback ~post_params:(Eliom_parameters.string "data") (
-    fun () (data) -> 
-      let song = Song.of_json (Json_io.json_of_string data) in
-      let () = Song.output song in
+  let _ = Eliom_output.Text.register_post_service ~fallback ~post_params:(Eliom_parameters.string "name") (
+    fun () (filename) -> 
+      let song = Song.of_file ( (Sys.getcwd()) // filename) in
       return (
 	Std.input_file ~bin:true (Song.midi_filename song),"audio/midi") 
   ) in
     ()
+
+let _ =
+  let fallback = Eliom_output.Text.register_service ~path:["midi2"] ~get_params:(Eliom_parameters.string "name" ** Eliom_parameters.string "_") ( 
+    fun (name,_) () -> 
+      let filename = (Unix.getcwd()) // name in
+      let song = Song.of_file filename in
+      let () = Song.output song in
+      return (
+	Std.input_file ~bin:true (Song.midi_filename song),"audio/midi") 
+  ) in
+	  
+  let _ = Eliom_output.Text.register_post_service ~fallback ~post_params:(Eliom_parameters.string "name") ( 
+    fun _ (name) -> 
+      let filename = (Unix.getcwd()) // name in
+      let song = Song.of_file filename in
+      let () = Song.output song in
+      return (
+	Std.input_file ~bin:true (Song.midi_filename song),"audio/midi") 
+  ) in
+	  ()
 
 let _ =
   let fallback = Eliom_output.Text.register_service ~path:["partoche"] ~get_params:(Eliom_parameters.unit) ( 
@@ -66,7 +126,7 @@ let _ =
 	  (body [
 	    h1 ~a:[a_class ["song-title"]] [pcdata song.Song.name] ;
 	    div ~a:[a_id "song-score"] [
-	      ul (List.map ( fun p -> li [ pcdata p.Part.name ]) (song.Song.score.Score.parts))
+	      ul (List.map ( fun (p,_) -> li [ pcdata p.Part.name ]) (song.Song.score.Score.parts))
 	    ]
 	  ]
 	  )
@@ -130,11 +190,13 @@ let _ =
 
       (l
        >>= fun data -> 
-       log Debug "uploaded file of size %d" (String.length data) ;
+       let () = log Debug "uploaded file of size %d" (String.length data) in
        let song = Song.of_json (Json_io.json_of_string data) in
        let () = Song.output song in
-      return (
-	Std.input_file ~bin:true (Song.midi_filename song),"audio/midi") 
+       let () = Song.save song (Unix.getcwd()) in
+       let () = log Debug "return midi data" in
+       return (
+	 Std.input_file ~bin:true (Song.midi_filename song),"audio/midi") 
   )) in
 () ;;
 
@@ -154,8 +216,8 @@ let _ =
 	(body [
 
 	  div ~a:[a_id "drop" ; a_class ["clearfix"]] [
-	    ul ~a:[a_id "output-listing01"] [] 
 	  ] ;
+	  ul ~a:[a_id "output-listing01"] [] 
 	  (*
 	  div [
 	    Eliom_output.Html5.post_form ~service:upload_s ( fun  name -> [

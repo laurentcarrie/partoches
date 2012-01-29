@@ -120,11 +120,11 @@ let expand_try_noraise loc msg what default print =
 	  ret
       with
 	  [ e -> (
-	    let () = $print$ (Printf.sprintf "INITIAL ERROR: %s\n" (Printexc.to_string e)) in     
-	    let () = Pa_exn.push_message $str:filename$ $int:line$ $msg$ in 
-	    let () = $print$ (Pa_exn.string_of_stack ()) in
+	    (*let () = $print$ (Printf.sprintf "INITIAL ERROR: %s\n" (Printexc.to_string e)) in     *)
+	    let () = $print$ (Pa_exn.string_of_stack e) in
+	    let () = Pa_exn.push_message $str:filename$ $int:line$ $msg$ in 	    
 	    let () = Pa_exn.clear_stack() in 
-	      ($default$)) ]
+	    ($default$)) ]
 	  >>
 ;;
 
@@ -147,7 +147,7 @@ let expand_print_stack loc e =
     <:expr< (
       let () = Pa_exn.push_message $str:filename$ $int:line$ "print stack" in 
       let () = Printf.printf "INITIAL ERROR: %s\n" (Printexc.to_string $e$) in     
-      let () = Pa_exn.print_stack () in 
+      let () = Pa_exn.print_stack e in 
       let () = Pa_exn.clear_stack() in
       let () = flush stdout  in ()
     )

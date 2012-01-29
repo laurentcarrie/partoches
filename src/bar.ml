@@ -27,7 +27,12 @@ let of_json (j:Json_type.t) : t = __PA__try "of_json" (
     t
 ) ;;
 
-
+let to_json t = __PA__try "to_json" (
+  let module Bu = Json_type.Build in
+  match t with
+    | NL nl -> Bu.list Note.to_json nl
+    | CL _ -> __PA__NOT_IMPLEMENTED__
+) ;;
 
 let to_lilypond t = __PA__try "to_lilypond" (
   match t with
