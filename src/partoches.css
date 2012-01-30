@@ -110,3 +110,19 @@ td.song-score-part-from
   border: thin solid #6495ed;
   border-collapse:collapse ;
 }
+
+span.dynatree-icon.dynatree-edit-icon
+{
+    border: 1px solid red;
+    background-position: 0 -112;
+}
+
+span.edit-label
+{
+  font-style: italic ;
+  }
+
+span.edit-value
+{
+  color: red ;
+  }

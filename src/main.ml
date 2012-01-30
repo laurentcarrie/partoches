@@ -22,6 +22,7 @@ let _ = Eliom_output.set_exn_handler
                     p [pcdata "Page not found"];
 		    p [pcdata (Printexc.to_string e)]]))
     | Eliom_common.Eliom_Wrong_parameter ->
+      let () = log Normal "error 500, wrong parameters" in
         Eliom_output.Html5.send ~code:500
           (html
              (head (title (pcdata "")) [])

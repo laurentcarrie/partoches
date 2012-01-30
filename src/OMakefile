@@ -67,8 +67,25 @@ partoches = $(OCamlProgram partoches,pa_exn version util launcher)
 
 install(bin,partoches.cmxs)
 install(bin,partoches)
-install(staticdir/css,partoches.css upload.css upload2.css filedrag.css)
-install(staticdir/js,upload.js filedrag.js)
+
+css-files[]=
+	partoches
+	upload
+	upload2
+	filedrag
+	jquery-ui-1.8.17.custom
+	ui.dynatree
+
+css-files=$(addsuffix .css,$(css-files))
+
+gif-files[]=
+	icons
+	loading
+	vline
+
+install(staticdir/css,$(css-files))
+install(staticdir/js,upload.js filedrag.js editer.js jquery-1.7.1.min.js  jquery.dynatree.min.js  jquery-ui-1.8.17.custom.min.js )
+install(staticdir/css,$(addprefix skin/,$(addsuffix .gif,$(gif-files))))
 
 build : $(OCamlLibrary partoches-core,$(file $(src-core)))
 
