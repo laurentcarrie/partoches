@@ -28,8 +28,10 @@ font-weight: bold ;
     }
 
 
-h1.song-title {
-	color:red
+h1.song-title 
+{
+  color:red ;
+  text-align:center ;
 }
 
 

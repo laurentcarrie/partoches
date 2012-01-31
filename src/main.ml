@@ -58,11 +58,15 @@ let _ =
   let () = Eliom_output.Html5.register ~service:main_s 
     (fun () () -> return (
 	html (
-	  head (title (pcdata "cif")) [
+	  head (title (pcdata "partoches")) [
+	    css_link ~uri:(make_uri (static_dir ()) ["3rdparty";"slate";"style.css"]) () ;  
+	    css_link ~uri:(make_uri (static_dir ()) ["css";"partoches.css"]) () ;  
 	  ]
 	)
 	  
 	  (body [
+
+	    Menu.menu () ;
 	    
 	    h1 [ pcdata "hello world" ] 
 	  ]

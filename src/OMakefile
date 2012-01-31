@@ -1,7 +1,7 @@
 
 .PHONY: build run test
 .DEFAULT: build
-.SUBDIRS: pa
+.SUBDIRS: pa 3rdparty
 
 
 USE_OCAMLFIND= true
@@ -46,6 +46,7 @@ src-core[]=
 	song	
 
 src-server[]=
+	menu
 	main
 	voir
 	editer
@@ -75,6 +76,7 @@ css-files[]=
 	filedrag
 	jquery-ui-1.8.17.custom
 	ui.dynatree
+	menu
 
 css-files=$(addsuffix .css,$(css-files))
 
@@ -89,3 +91,4 @@ install(staticdir/css,$(addprefix skin/,$(addsuffix .gif,$(gif-files))))
 
 build : $(OCamlLibrary partoches-core,$(file $(src-core)))
 
+install(staticdir/3rdparty/slate,slate-generated.css)

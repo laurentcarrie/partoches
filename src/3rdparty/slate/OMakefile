@@ -1,0 +1,17 @@
+.PHONY: build
+.DEFAULT: build
+
+
+install(staticdir/3rdparty/slate,style.css)
+
+images[]=
+	blueslate_background.gif
+	greenslate_background.gif
+	purpleslate_background.gif
+	redslate_background.gif
+	blueslate_backgroundOVER.gif
+	greenslate_backgroundOVER.gif
+	purpleslate_backgroundOVER.gif
+	redslate_backgroundOVER.gif
+
+install(staticdir/3rdparty/slate/images,$(addprefix images/,$(images)))
