@@ -1,0 +1,71 @@
+
+build_RTDTS_env() =
+	if $(or $(defined public.RTDTS_env) $(defined public.rtdts_env))
+		ConfMsgError($"""RTDTS_env() or rtdts_env() definition found !
+
+To improve the build consistency, remove these definitions from your .om file
+and add the following line instead:
+	
+	RTDTS_prefix = <Absolute path to RTDTS install directory>
+
+""")
+		exit(1)
+
+	if $(not $(defined RTDTS_prefix))
+		ConfMsgError($"""RTDTS_prefix not set !
+
+Add the following line to your .om file:
+
+	RTDTS_prefix = <Absolute path to RTDTS install directory>
+
+""")
+		exit(1)
+
+
+	RTDTS_env() =
+		INCLUDES += $(RTDTS_prefix)/include
+		LDFLAGS += 
+			if $(equal $(OSTYPE),Win32) 
+				value $(RTDTS_prefix)/lib/ms71_$(switch $(build), debug, d, release, r)/RTDTS.lib
+			else
+				value -L$(RTDTS_prefix)/lib/$(RTDTS_COMPILER)_r -lRTDTS
+		static.=
+			if $(not $(TS_VerboseCheckCXXHeader rtdts_api.h))
+				eprintln($"rtdts_api.h was not found on the include path, check your RTDTS_prefix variable")
+				exit(1)
+		export
+
+	rtdts_env() =
+		RTDTS_env()
+		export
+	export
+
+
+match $(CIF_assembly)
+case CIF_NH_90 
+	build_RTDTS_env()
+	export
+case CIF_JNTP
+	build_RTDTS_env()
+	export
+case CIF_Thesim
+case CIF_TE
+case CIF_Usine
+case STT
+default
+	ConfMsgError($"Invalid assembly $(quote $(CIF_assembly)) !")
+	exit(1)
+
+
+# Jsoncpp
+jsoncpp_env() =
+	INCLUDES += $(builddir)/COTS/jsoncpp/include
+	LIBS += $(builddir)/COTS/jsoncpp/src/lib_json/json
+	export
+
+
+# l'emplacement de GTK 
+GTKROOT = 
+	if $(equal $(OSTYPE),Win32)
+		value $(get-registry HKEY_LOCAL_MACHINE, Software\GTK\2.0, Path)
+

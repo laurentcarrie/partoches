@@ -1,0 +1,568 @@
+# Les regles standards pour la compilation C/C++
+open build/C
+
+# Modified versions follow, their names are prefixed with TS_
+
+
+################################################################################
+# Standard variables
+
+
+public.LIBS[] =
+public.DLLS[] =
+public.DEPS[] =
+
+public.OUTDIR_STATIC_DEBUG = .
+public.OUTDIR_STATIC_RELEASE = .
+public.OUTDIR_DYNAMIC_DEBUG = .
+public.OUTDIR_DYNAMIC_RELEASE = .
+public.OUTDIR_MANAGED_DEBUG = .
+public.OUTDIR_MANAGED_RELEASE = .
+
+public.CFLAGS_DEBUG = 
+public.CFLAGS_RELEASE = 
+public.CFLAGS_GPERFTOOLS = 
+public.CXXFLAGS_DEBUG = 
+public.CXXFLAGS_RELEASE = 
+public.CXXFLAGS_GPERFTOOLS = 
+
+public.BUILD_TYPES[] =
+	DEBUG
+	RELEASE
+	GPERFTOOLS
+
+# support de gcov
+if $(not $(defined public.USE_GCOV))
+	public.USE_GCOV = false
+	export
+
+
+
+if $(equal $(OSTYPE), Win32)
+	if $(not $(defined public.EMBED_MANIFESTS))
+		if $(not $(CheckProg mt))
+			println($"--- assuming mvsc71, manifests will NOT be embedded")
+			public.EMBED_MANIFESTS = false
+			public.MANIFEST_FLAG = 
+			export
+		else
+			println($"---- assuming msvc80 or later, manifests WILL be embedded")
+			public.EMBED_MANIFESTS = true
+			public.MANIFEST_FLAG = /MANIFEST
+			export
+		export
+	else
+		println($"--- user defined EMBED_MANIFESTS = $(EMBED_MANIFESTS)")
+	export
+#For Linux
+if $(not $(defined public.EMBED_MANIFESTS))
+	public.EMBED_MANIFESTS = false
+	export
+
+if $(equal $(OSTYPE), Win32)
+	public.CFLAGS_COMMON = /DWIN32 /D_WINDOWS /D_MBCS /Zi /W3 /wd4800 /wd4503 /wd4099 /wd4251 /wd4996 /wd4355 /WX /D_CRT_SECURE_NO_WARNINGS
+	public.CFLAGS_DEBUG = /DDEBUG $(CFLAGS_COMMON) /Od /MDd
+	public.CFLAGS_RELEASE = /DRELEASE $(CFLAGS_COMMON) /O2 /MD
+	public.CFLAGS_GPERFTOOLS = /DPROFILE $(CFLAGS_COMMON) /Od /MDd
+
+	public.CXXFLAGS_COMMON = $(CFLAGS_COMMON) /EHsc /GR
+	public.CXXFLAGS_DEBUG = /DDEBUG $(CXXFLAGS_COMMON) /Od /MDd
+	public.CXXFLAGS_RELEASE = /DRELEASE $(CXXFLAGS_COMMON) /O2 /MD
+	public.CXXFLAGS_GPERFTOOLS = /DPROFILE $(CXXFLAGS_COMMON) /Od /MDd
+
+	public.PRE_LIB = 
+	public.LDFLAGS = /link /FIXED:NO /INCREMENTAL:NO /LARGEADDRESSAWARE
+	public.LDFLAGS_DLL = /DLL $(MANIFEST_FLAG)
+
+	public.pdb_flag(fn) =
+		value /Fd$(removesuffix $(fn)).pdb
+	export
+else
+	public.CFLAGS_COMMON = -fPIC -g -Wall -Wno-unused -Werror -Wno-strict-aliasing -pthread -pipe
+	public.CFLAGS_GCOV = -fprofile-arcs -ftest-coverage 
+	public.CFLAGS_COMMON+= $(if $(USE_GCOV),$(CFLAGS_GCOV),$(EMPTY))
+	public.CFLAGS_DEBUG = -DDEBUG $(CFLAGS_COMMON)
+	public.CFLAGS_RELEASE = -DRELEASE $(CFLAGS_COMMON) -O2
+	public.CFLAGS_GPERFTOOLS = -DPROFILE $(CFLAGS_COMMON) -Wl,-lprofiler
+
+	public.CXXFLAGS_COMMON = $(CFLAGS_COMMON)
+	public.CXXFLAGS_DEBUG = $(CFLAGS_DEBUG)
+	public.CXXFLAGS_RELEASE = $(CFLAGS_RELEASE)
+	public.CXXFLAGS_GPERFTOOLS = $(CFLAGS_GPERFTOOLS)
+	public.CXXFLAGS_GCOV = $(CFLAGS_GCOV)
+
+	public.PRE_LIB = lib
+	public.LDFLAGS = -lrt -ldl
+	public.LDFLAGS_DLL = -shared
+	LDFLAGS+=  $(if $(USE_GCOV),-fprofile-arcs -ftest-coverage -lgcov,$(EMPTY))
+
+	public.pdb_flag(fn) =
+		value $(EMPTY)
+	export
+
+
+if $(not $(defined public.build))
+	public.build = debug
+	export
+
+
+%$(EXT_OBJ): %.c :scanner: scan-c-%.c
+	$(CC) $(CFLAGS_COMMON) $(CFLAGS) $(PREFIXED_INCLUDES) -c $(CCOUT)$@ $(pdb_flag $<) $<
+
+
+
+foreach(CXX_EXT, $(CXX_EXTS))
+	%$(EXT_OBJ): %$(CXX_EXT) :scanner: scan-cxx-%$(CXX_EXT)
+		$(CXX) $(CFLAGS_COMMON) $(CXXFLAGS) $(PREFIXED_INCLUDES) -c $(CCOUT)$@ $(pdb_flag $<) $<
+	export .RULE
+
+public.RUBY187 = false
+if $(equal $(OSTYPE), Win32)
+	# Test Ruby 1.8.7
+	result = value $(shell ruby --version |& grep 'ruby *1.8.7')
+	if $(equal $(length  $(result)), 1)
+		public.RUBY187 = false
+		println($"--- Checking For Ruby 1.8.7: false")
+		export
+	else
+		public.RUBY187 = true
+		println($"--- Checking For Ruby 1.8.7: true")
+		export
+	export
+
+public.VC8 = false
+public.VC10 = false
+if $(equal $(OSTYPE), Win32)
+	# Test Visual studio 2005 (VC8) or Visual studio 2010 (VC10)
+	result = value $(shell cl |& grep 'Version *14')
+	if $(equal $(length  $(result)), 1)
+		public.VC8 = false
+		println($"--- Checking For Microsoft VC8: false")
+		export
+	else
+		public.VC8 = true
+		println($"--- Checking For Microsoft VC8: true")
+		export
+	export
+
+#	# Test Visual studio 2010 (VC10)
+	result = value $(shell cl |& grep 'Version *16')
+	if $(equal $(length  $(result)), 1)
+		public.VC10 = false
+		println($"--- Checking For Microsoft VC10: false")
+		export
+	else
+		public.VC10 = true
+		println($"--- Checking For Microsoft VC10: true")
+		public.VC8 = true
+		export
+	export
+
+# Ici, nous reprenons la definition des scanners pour le C/C++ afin d'eviter la generation
+# d'un eventuel vc70.pdb sous Windows. C'est requis pour pouvoir faire des scans paralleles
+if $(equal $(OSTYPE), Win32)
+    cl_prefix = $(dirname $(dirname $(find-in-path $(PATH), cl.exe)))
+    Shell. +=
+        builtin-cc-depend(argv) =
+           filename = $(nth 0, $(argv))
+           depends[] =
+           awk(b, $(stdin))
+           case $'Note:.*including file: *\(.*\)$'
+              depends += $(file $(string $1))
+              export
+           case $'.[(][0-9][0-9]*[)] : (warning|(fatal |)error) [A-Z][0-9]*: '
+              eprintln($0)
+           default
+              eprintln($0)
+	   cl_prefix_filter = $(addsuffix $"%", $(cl_prefix) $(lowercase $(cl_prefix)))
+           depends = $(string-escaped $(filter-out $(cl_prefix_filter), $(set $(depends))))
+           objname = $(string-escaped $(rootname $(filename))$(EXT_OBJ))
+           println($"$(objname): $(depends)")
+
+    # On enleve les Zi/ZI car ils provoquent la generation d'un pdb de nom vcx0.pdb,
+    # et forcement lorsqu'on scanne plusieurs fichiers en //, badaboum
+    # Ensuite on evite de s'arreter sur un warning, il se reproduira au build
+    Shell. +=
+        filter-cc-options(cflags) =
+	   value $(filter-out $(addsuffixes WX Zi ZI, - /), $(cflags))
+
+    .SCANNER: scan-c-%.c: %.c /.PHONY/CGeneratedFilesTarget :value: $(digest-in-path-optional $(INCLUDES), $&)
+        $(CC) $(Shell.filter-cc-options $(CFLAGS)) $(PREFIXED_INCLUDES) /Zs /showIncludes $< |& builtin-cc-depend $<
+
+    # Include default rule for backwards-compatibility
+    .SCANNER: %$(EXT_OBJ): %.c /.PHONY/CGeneratedFilesTarget :value: $(digest-in-path-optional $(INCLUDES), $&)
+        $(CC) $(Shell.filter-cc-options $(CFLAGS)) $(PREFIXED_INCLUDES) /Zs /showIncludes $< |& builtin-cc-depend $<
+
+    foreach(CXX_EXT, $(CXX_EXTS))
+        .SCANNER: scan-cxx-%$(CXX_EXT): %$(CXX_EXT) /.PHONY/CGeneratedFilesTarget :value: $(digest-in-path-optional $(INCLUDES), $&)
+            $(CXX) $(Shell.filter-cc-options $(CXXFLAGS)) $(PREFIXED_INCLUDES) /Zs /showIncludes $< |& builtin-cc-depend $<
+
+        # Include default rule for backwards-compatibility
+        .SCANNER: %$(EXT_OBJ): %$(CXX_EXT) /.PHONY/CGeneratedFilesTarget :value: $(digest-in-path-optional $(INCLUDES), $&)
+            $(CXX) $(Shell.filter-cc-options $(CXXFLAGS)) $(PREFIXED_INCLUDES) /Zs /showIncludes $< |& builtin-cc-depend $<
+
+        export
+    export
+else
+    .SCANNER: scan-c-%.c: %.c /.PHONY/CGeneratedFilesTarget :value: $(digest-in-path-optional $(INCLUDES), $&)
+        $(CC) $(CFLAGS) $(PREFIXED_INCLUDES) -MM $<
+
+    # Include default rule for backwards-compatibility
+    .SCANNER: %$(EXT_OBJ): %.c /.PHONY/CGeneratedFilesTarget :value: $(digest-in-path-optional $(INCLUDES), $&)
+        $(CC) $(CFLAGS) $(PREFIXED_INCLUDES) -MM $<
+
+    foreach(CXX_EXT, $(CXX_EXTS))
+        .SCANNER: scan-cxx-%$(CXX_EXT): %$(CXX_EXT) /.PHONY/CGeneratedFilesTarget :value: $(digest-in-path-optional $(INCLUDES), $&)
+            $(CXX) $(CXXFLAGS) $(PREFIXED_INCLUDES) -MM $<
+
+        # Include default rule for backwards-compatibility
+        .SCANNER: %$(EXT_OBJ): %$(CXX_EXT) /.PHONY/CGeneratedFilesTarget :value: $(digest-in-path-optional $(INCLUDES), $&)
+            $(CXX) $(CXXFLAGS) $(PREFIXED_INCLUDES) -MM $<
+
+        export
+    export
+
+# Define a function to build a C-library
+#
+# \begin{doc}
+# \subsection{Building C programs and Libraries}
+# \twofuns{StaticCLibrary}{DynamicCLibrary}
+#
+# The \verb+StaticCLibrary+ builds a static library and the \verb+DynamicCLibrary+
+# function builds a shared library (DLL).
+#
+# \begin{verbatim}
+# StaticCLibrary(<target>, <files>)
+# DynamicCLibrary(<target>, <files>)
+# \end{verbatim}
+#
+# The \verb+<target>+ does \emph{not} include the library suffix, and
+# The \verb+<files>+ list does not include the object suffix.  These
+# are obtained from the \hypervarxn{EXT_LIB}{EXT\_LIB} (\hypervarxn{EXT_DLL}{EXT\_DLL})
+# and \hypervarxn{EXT_OBJ}{EXT\_OBJ} variables.
+#
+# This function returns the library filename.
+#
+# The following command builds the library \verb+libfoo.a+ from the
+# files \verb+a.o b.o c.o+ on \verb+Unix+, or the library
+# \verb+libfoo.lib+ from the files \verb+a.obj b.obj c.obj+
+# on \verb+Win32+.
+#
+# \begin{verbatim}
+# StaticCLibrary(libfoo, a b c)
+# .DEFAULT: $(StaticCLibrary libbar, a b c d)
+# \end{verbatim}
+#
+# \varlabel{CDLL_IMPLIES_STATIC}{CDLL\_IMPLIES\_STATIC} If the \verb+CDLL_IMPLIES_STATIC+
+# variable is enabled (this is default on \verb+Win32+), all the \verb+DynamicC+ functions
+# would assume that creating a shared library automatically created a static one.
+# \end{doc}
+#
+
+
+if $(equal $(OSTYPE), Win32)
+	lib_filename(lib) =
+		value $(file $(lib)$(EXT_LIB))
+	dll_filename(dll) =
+		value $(file $(dll)$(EXT_LIB))
+	lib_cmdline_ref(lib) =
+		value $(file $(lib)$(EXT_LIB))
+	dll_cmdline_ref(dll) =
+		value $(file $(dll)$(EXT_LIB))
+	dll_targets(dll) =
+		value $(file $(addsuffixes .lib .dll .pdb, $(dll)))
+	lib_targets(lib) =
+		value $(file $(lib).lib)
+	export
+else
+	lib_filename(lib) =
+		value $(file $(dirname $(lib))/lib$(basename $(lib))$(EXT_LIB))
+	dll_filename(dll) =
+		value $(file $(dirname $(dll))/lib$(basename $(dll))$(EXT_DLL))
+	lib_cmdline_ref(lib) =
+		value $(array -L$(absname $(dirname $(lib))), -l$(basename $(lib)))
+	dll_cmdline_ref(dll) =
+		value $(array -L$(absname $(dirname $(dll))), -l$(basename $(dll)))
+	dll_targets(dll) =
+		value $(file lib$(dll).so)
+	lib_targets(lib) =
+		value $(file lib$(lib).a)
+	export
+
+
+public.TS_StaticCLibrary(name, files) =
+	private.OFILES = $(addsuffix $(EXT_OBJ), $(files))
+	private.TARGETS = $(lib_targets $(name)) $(if $(USE_GCOV),$(addsuffix .gcno,$(files)),$(EMPTY))
+
+	if $(equal $(OSTYPE), Win32)
+		$(TARGETS): $(OFILES) $(DEPS) :effects: $(name).tmp
+			echo $(concat $"
+", $(foreach $(quote), $(absname $(OFILES)))) > $(name).tmp
+			$(AR $@) @$(name).tmp
+			rm -f $(name).tmp
+
+	else
+		$(TARGETS): $(OFILES) $(DEPS) 
+			rm -f $@
+			$(AR $@) $(OFILES)
+			$(RANLIB) $@
+
+	export .RULE
+	value $(TARGETS)
+
+
+public.TS_DynamicCLibrary(name, files) =
+	private.OFILES = $(addsuffix $(EXT_OBJ), $(files))
+	private.LFILES = $(foreach $(lib_filename), $(public.LIBS))
+	private.DFILES = $(foreach $(dll_filename), $(public.DLLS))
+	private.LREFS = $(foreach $(lib_cmdline_ref), $(public.LIBS))
+	private.DREFS = $(foreach $(dll_cmdline_ref), $(public.DLLS))
+	private.TARGETS = $(dll_targets $(name))  $(if $(USE_GCOV),$(addsuffix .gcno,$(files)),$(EMPTY))
+	semicolon = $(string ;)
+	if $(equal $(OSTYPE), Win32)
+		$(TARGETS): $(OFILES) $(LFILES) $(DFILES) $(DEPS) :effects: $(name).tmp
+			echo $(concat $"
+", $(foreach $(quote), $(absname $(OFILES)))) > $(name).tmp
+			$(CC) $(CFLAGS) $(LDOUT)$(PRE_LIB)$(name)$(EXT_DLL) @$(name).tmp $(LREFS) $(DREFS) $(LDFLAGS) $(LDFLAGS_DLL)
+			if $(EMBED_MANIFESTS) 
+				mt -manifest $(PRE_LIB)$(name)$(EXT_DLL).manifest -outputresource\:$(PRE_LIB)$(name)$(EXT_DLL)$(semicolon)2
+			rm -f $(name).tmp
+		export .RULE
+	else
+		$(TARGETS): $(OFILES) $(LFILES) $(DFILES) $(DEPS) 
+			$(CC) $(CFLAGS) $(LDOUT)$(PRE_LIB)$(name)$(EXT_DLL) $,(OFILES) $(LREFS) $(DREFS) $(LDFLAGS) $(LDFLAGS_DLL)
+		export .RULE
+
+	export .RULE
+	value $(TARGETS)
+
+
+#
+# Define a function to build a C-program
+#
+# \begin{doc}
+# \fun{CProgram}
+#
+# The \verb+CProgram+ function builds a C program from a set
+# of object files and libraries.
+#
+# \verb+CProgram(<name>, <files>)+
+#
+# The \verb+<name>+ argument specifies the name of the program to be built;
+# the \verb+<files>+ argument specifies the files to be linked. The function
+# returns the filename of the executable.
+#
+# Additional options can be passed through the following variables.
+# \begin{description}
+# \item[CFLAGS] Flags used by the C compiler during the link step.
+# \item[LDFLAGS] Flags to pass to the loader.
+# \item[LIBS] Additional libraries to be linked.
+# \end{description}
+#
+# For example, the following code specifies that the program
+# \verb+foo+ is to be produced by linking the files \verb+bar.o+
+# and \verb+baz.o+ and libraries \verb+libfoo.a+.
+#
+# \begin{verbatim}
+# section
+#    LIBS = libfoo
+#    LDFLAGS += -lbar
+#    CProgram(foo, bar baz)
+# \end{verbatim}
+# \end{doc}
+#
+
+# Modified from standard CProgram
+public.TS_CProgram(name, files) =
+	private.OFILES = $(addsuffix $(EXT_OBJ), $(files))
+
+#	# The targets include the executable and debug informations
+	private.TARGETS =
+		if $(equal $(OSTYPE), Win32)
+			value $(file $(addsuffixes .exe .pdb, $(name)))
+		else
+			value $(file $(name)) $(if $(USE_GCOV),$(addsuffix .gcno,$(files)),$(EMPTY))
+
+	private.TMP = $(filter -%, $(LIBS))
+	if $(TMP)
+		eprintln($""!!! ERROR: $(fullname .) LIBS variable should not include link flags "$(TMP)"."")
+		eprintln($""!!! those should go into LDFLAGS."")
+		exit(1)
+
+	private.TMP = $(filter -%, $(DLLS))
+	if $(TMP)
+		eprintln($""!!! ERROR: $(fullname .) DLLS variable should not include link flags "$(TMP)"."")
+		eprintln($""!!! those should go into LDFLAGS."")
+		exit(1)
+
+	private.TMP = $(filter %$(EXT_LIB) %$(EXT_DLL), $(LIBS))
+	if $(TMP)
+		eprintln($""!!! ERROR: $(fullname .) LIBS variable should contain static libraries _without_ extension."")
+		exit(1)
+
+	private.TMP = $(filter %$(EXT_LIB) %$(EXT_DLL), $(DLLS))
+	if $(TMP)
+		eprintln($""!!! ERROR: $(fullname .) DLLS variable should contain shared libraries _without_ extension."")
+		exit(1)
+
+	private.LFILES = $(foreach $(lib_filename), $(LIBS))
+	private.DFILES = $(foreach $(dll_filename), $(DLLS))
+	private.LREFS = $(foreach $(lib_cmdline_ref), $(LIBS))
+	private.DREFS = $(foreach $(dll_cmdline_ref), $(DLLS))
+	semicolon = $(string ;)
+
+	if $(equal $(OSTYPE), Win32)
+		$(TARGETS): $(OFILES) $(LFILES) $(DFILES) $(DEPS) :effects: $(name).tmp
+			echo $(concat $"
+", $(foreach $(quote), $(absname $(OFILES)))) > $(name).tmp
+			$(CC) $(CFLAGS) $(LDOUT)$(name)$(EXE) @$(name).tmp $(LREFS) $(DREFS) $(LDFLAGS) $(MANIFEST_FLAG)
+			if $(EMBED_MANIFESTS) 
+				mt -manifest $(name)$(EXE).manifest -outputresource\:$(name)$(EXE)$(semicolon)2
+			rm -f $(name).tmp
+		export .RULE
+	else
+		$(TARGETS): $(OFILES) $(LFILES) $(DFILES) $(DEPS)
+			$(CC) $(CFLAGS) $(LDOUT)$(file $(name)$(EXE)) $,(OFILES) $(LREFS) $(DREFS) $(LDFLAGS)
+		export .RULE
+
+	export .RULE
+	#println($"--- Program $(fullname $(name)) targets are: $(TARGETS)")
+	value $(TARGETS)
+
+
+#
+# The C++ versions.
+#
+# \begin{doc}
+# \twofuns{CXXProgram}{CXXProgramInstall}
+#
+# The \verb+CXXProgram+ and \verb+CXXProgramInstall+ functions are
+# equivalent to their C counterparts, except that would use \verb+$(CXX)+ and \verb+$(CXXFLAGS)+
+# for linking instead of \verb+$(CC)+ and \verb+$(CFLAGS)+.
+# \end{doc}
+#
+
+public.TS_CXXProgram(name,files) =
+    CC = $(CXX)
+    CFLAGS = $(CXXFLAGS)
+    return $(TS_CProgram $(name), $(files))
+
+
+
+# \begin{doc}
+# \sixfuns{StaticCXXLibrary}{StaticCXXLibraryCopy}{StaticCXXLibraryInstall}{DynamicCXXLibrary}{DynamicCXXLibraryCopy}{DynamicCXXLibraryInstall}
+#
+# Similarly, the six \verb+CXXLibrary+ functions the C++ equivalents of the corresponding
+# \verb+CLibrary+ functions.
+# \end{doc}
+#
+public.TS_StaticCXXLibrary(name, files) =
+    CC = $(CXX)
+    CFLAGS = $(CXXFLAGS)
+    return $(TS_StaticCLibrary $(name), $(files))
+
+
+public.TS_DynamicCXXLibrary(name, files) =
+    CC = $(CXX)
+    CFLAGS = $(CXXFLAGS)
+    return $(TS_DynamicCLibrary $(name), $(files))
+
+
+if $(not $(defined public.PRINT_INSTALL_TARGETS))
+	public.PRINT_INSTALL_TARGETS = false
+	export
+
+public.TS_InstallFiles(tag, reldir, original_files) =
+	installed_files[] =
+	foreach(original_file, $(original_files))
+		installed_file = $(string $(prefix)/$(reldir)/$(basename $(original_file)))
+		if $(PRINT_INSTALL_TARGETS)
+			println($(installed_file))
+		$(installed_file): $(original_file)
+			mkdir(-p $(dirname $@))
+			cp($< $@)
+		installed_files += $(installed_file)
+		export
+	$(tag): $(installed_files)
+	export .RULE
+	value $(file $(installed_files))
+
+
+public.TS_NoBaseInstallFiles(tag, reldir, original_files) =
+	installed_files[] =
+	foreach(original_file, $(original_files))
+		installed_file = $(string $(prefix)/$(reldir)/$(original_file))
+		if $(PRINT_INSTALL_TARGETS)
+			println($(installed_file))
+		$(installed_file): $(original_file)
+			mkdir(-p $(dirname $@))
+			cp($< $@)
+		installed_files += $(installed_file)
+		export
+	$(tag): $(installed_files)
+	export .RULE
+	value $(file $(installed_files))
+
+
+public.TS_InstallHeaderFiles(tag, reldir, original_files) =
+	installed_files[] =
+	foreach(original_file, $(original_files))
+		installed_file = $(string $(includedir)/$(reldir)/$(original_file))
+		if $(PRINT_INSTALL_TARGETS)
+			println($(installed_file))
+		$(installed_file): $(original_file)
+			mkdir(-p $(dirname $@))
+			cp($< $@)
+		installed_files += $(installed_file)
+		export
+	$(tag): $(installed_files)
+	export .RULE
+	CGeneratedFiles($(installed_files))
+	value $(file $(installed_files))
+
+
+public.TS_InstallBinFiles(tag, original_files) =
+	installed_files[] =
+	foreach(original_file, $(original_files))
+		installed_file = $(bindir)/$(basename $(original_file))
+		if $(PRINT_INSTALL_TARGETS)
+			println($(installed_file))
+		$(installed_file): $(original_file)
+			mkdir(-p $(dirname $@))
+			cp($< $@)
+			chmod(a+x $@)
+		installed_files += $(installed_file)
+		export
+	$(tag): $(installed_files)
+	export .RULE
+	value $(file $(installed_files))
+
+# Cette fonction permet d'aggreger des .cpp en inserant des directives #line
+# afin que le compilo puisse remonter les erreurs au bon endroit
+public.AggregateCFiles(target, sources) =
+	LocalCGeneratedFiles($(target))
+	$(target): $(sources)
+		echo // $(string $(length $^)) files aggregated > $@
+		foreach(source, $^)
+			echo \#line 1 $(quote $(c-escaped $(absname $(source)))) >> $@
+			cat $(source) >> $@
+	export .RULE
+
+TS_TryCompileCXX(prog) =
+	CXXFLAGS +=
+		if $(equal $(OSTYPE),Win32)
+			value /TP /EHsc /DWIN32 /MDd
+	return $(TryCompilingC $(CXX) $(ConfCleanCFLAGS $(CXXFLAGS)) $(PREFIXED_INCLUDES) -c, $(EMPTY), $(EXT_OBJ), $(prog), None)
+
+public.TS_CheckCXXHeader(files) =
+	return $(TS_TryCompileCXX $"""
+$(add-wrapper $(nl)$'#include <', >, $(files))
+int main(int argc, char **argv) {
+    return 0;
+}
+""")
+
+public.TS_VerboseCheckCXXHeader(files) =
+	ConfMsgChecking(for $(files))
+	return $(ConfMsgFound $(TS_CheckCXXHeader $(files)))
+

@@ -1,0 +1,32 @@
+.PHONY: build 
+.DEFAULT: build
+
+USE_OCAMLFIND=true
+OCAMLFLAGS= -g -dtypes -warn-error A
+BYTE_ENABLED= false
+NATIVE_ENABLED= true
+OCAMLPACKS= str,extlib,json-wheel
+
+
+build : partoche.mli
+
+OCamlGeneratedFiles(version.ml)
+version=$(gets ../VERSION)
+version.ml : 
+       echo "let version = \"$(version)\"" > $@        
+
+src[]=
+	partoche
+	score
+	bar
+	part
+	util
+	version
+
+build : $(OCamlLibrary partoche,$(src))
+
+OCAML_LIBS+= partoche
+build :$(OCamlProgram partoche,main)
+
+TS_InstallBinFiles(build,partoche)
+TS_InstallFiles(build,.,partoche_env.bashrc)

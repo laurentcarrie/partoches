@@ -1,0 +1,7 @@
+# ne mettre ici que des dependances utiles pour compiler CIF_Studio,
+# pour ne pas polluer les autres .om
+
+# la commande convert, pour convertir des images
+CONVERT= convert
+
+

@@ -1,0 +1,44 @@
+
+
+public.TS_dist_bootstrap_files()=  
+	mkdir(-p $(distdir))
+	foreach(f,OMakeroot OMakefile success.ascii fail.ascii $(host).om)
+		cp $(f) $(distdir)/.
+	mkdir(-p $(distdir)/TS)
+	foreach(f, $(addsuffixes .om .omc, CIF Distribute C Compatibility Configure LaTeX))
+		cp TS/$(f) $(distdir)/TS/$(f)
+
+
+
+
+.PHONY: copy-dist
+public.TS_dist(files) =
+	private.OMAKEFILE_INCLUDED = $(filter OMakefile, $(files))
+	if $(OMAKEFILE_INCLUDED)
+		ConfMsgError($"in $(fullname OMakefile): OMakefile is automatically distributed, remove it from TS_dist")
+
+	copy-dist:
+		foreach(f, $(file OMakefile $(files)))
+			mkdir(-p $(dirname $(distdir)/$(fullname $(f))))
+			if $(test -f $(f))
+				cp(-f $(f) $(distdir)/$(fullname $(f)))
+			else
+				ConfMsgError($"cannot install missing file: $(absname $(f))")
+
+
+# Ceci est une autre version detaillant les cibles une a une
+# mais elle s'avere beaucoup plus lente que la precedente
+.PHONY: DistributedFilesTarget
+public.TS_DistributeFiles(files) =
+	TS_dist($(files))
+	foreach(f, $(files))
+		section
+			OMakeFlags(-s)
+			DistributedFilesTarget: $(distdir)/$(fullname $(f))
+			$(distdir)/$(fullname $(f)): $(f)
+				mkdir(-p $(dirname $@))
+				cp($< $@)
+			export .RULE
+		export .RULE
+	export .RULE
+

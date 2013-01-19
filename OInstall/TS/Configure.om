@@ -1,0 +1,134 @@
+open configure/Configure
+
+
+# L'extension pour les scripts
+if $(equal $(OSTYPE), Win32)
+	CMD = .cmd
+	EXT_CMD = .cmd
+	DEVNULL = NUL
+	export
+else
+	CMD = 
+	EXT_CMD = 
+	DEVNULL = /dev/null
+	export
+
+
+
+
+
+TS_CheckProg(name)=
+	if $(not $(CheckProg $(name)))
+		ConfMsgError($"""$(name) could not be found in the following PATH:
+
+	PATH[] =
+		$(concat $"
+		", $(PATH))
+""")
+
+# la commande convert, pour convertir des images
+#CONVERT=
+#	if $(equal $(OSTYPE),Win32)
+#		value $(file $(get-registry HKEY_LOCAL_MACHINE, Software\ImageMagick\Current, BinPath)/convert.exe)
+#	else
+#		value convert
+
+TS_CheckPath(name,path) =
+	ConfMsgChecking(whether bin or dll '$(name)' is found in '$(path)')
+	real_path=$(file $(which $(name)))
+	wanted_path=$(file $(path)/$(name))
+	real_digest=$(digest $(real_path))
+	wanted_digest=$(digest $(wanted_path))
+	println("")
+	println("real_path : $(real_path)")
+	println("wanted_path : $(wanted_path)")
+#	probleme de comparaison d'emplacements de fichiers sous DOS
+#	ca ne marche pas, osh considere differents deux chemins, un au style 8.3, l'autre au style long
+#	contournement : on compare le digest des fichiers
+#	result=$(test $(real_path) -ef $(wanted_path))
+	result=$(test $(digest $(real_path)) = $(digest $(wanted_path))) 
+	if $(result)
+		ConfMsgResult(yes)
+	else
+		ConfMsgResult(NO)
+		ConfMsgError($"
+'$(name)' 
+was expected to be found in '$(path)', 
+but found in '$(real_path)'")
+
+TS_ConfVarCheck(name) =
+	ConfMsgChecking(whether variable '$(name)' was set)
+	try
+		v = $(getvar $(name))
+		ConfMsgResult($(string $(v)))
+		value $(v)
+	default
+		ConfMsgResult(NO)
+		ConfMsgError($"You must provide a value for variable '$(name)' with:
+
+	omake $(name)=<value> ...
+")
+
+TS_ConfVarCheckOptional(name, defaut) =
+	ConfMsgChecking(whether variable '$(name)' was set)
+	try
+		v = $(getvar $(name))
+		ConfMsgResult(yes)
+		value $(v)
+	default
+		$(name) = $(defaut)
+		value $(name)
+
+# S'assure que l'argument prefix= a ete passe au moins une fois en ligne
+# de commande. Il sera ensuite memorise et tout changement devra se faire
+# via l'option --configure
+TS_ConfigureInstallationPrefix() =
+	public.prefix = $(dir $(string $(TS_ConfVarCheck prefix)))
+	public.build = $(string $(TS_ConfVarCheck build))
+	public.bindir = $(dir $(prefix)/bin)
+	public.libdir = $(dir $(prefix)/lib)
+	public.includedir = $(dir $(prefix)/include)
+	export
+
+toto() =
+	static. =
+		ConfMsgChecking(whether an installation prefix was specified)
+		try
+			prefix = $(dir $"$(prefix)")
+			export
+		default
+			eprintln($"(no)")
+			ConfMsgError($"installation prefix not specified")
+
+		ConfMsgResult(yes)
+		export
+#	println(--- Building version $(version))
+	println(--- Using prefix $(absname $(prefix)))
+	bindir = $(dir $(prefix)/bin)
+	libdir = $(dir $(prefix)/lib)
+	includedir = $(dir $(prefix)/include)
+	export
+
+
+# des executables composant ledit produit
+TS_CheckProductAvailability(product_name, prog_name) =
+	ConfMsgChecking($(product_name) availability)
+	prog_locations = $(where $(prog_name))
+	if $(prog_locations)
+		prog = $(nth 0, $(prog_locations))
+		product_version = $(shell $(prog) --version)
+		product_prefix = $(dirof $(dirof $(product_bindir)))
+		ConfMsgResult($"using version $(product_version) in $(product_prefix)")
+		setvar($(product_name)_prefix, $(product_prefix))
+		setvar($(product_name)_version, $(product_version))
+		export
+	else
+		eprintln($"(missing)")
+		ConfMsgError($"Check your PATH environment variable.")
+
+
+CIF_CheckAvailability() =
+	TS_CheckProductAvailability(CIF, CIF_Generator)
+	export
+
+

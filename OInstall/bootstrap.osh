@@ -1,0 +1,47 @@
+open configure/Configure
+
+srcdir = $(absname $(dirname $(nth 0, $(argv))))
+
+println($"--- Copying files from $(srcdir)")
+echo $"""# These values were automatically prepended by $(srcdir)/bootstrap.osh
+srcdir = $(dirname $(srcdir))
+builddir = .
+prefix = install
+
+# Followed by the contents of $(srcdir)/OMakeroot.default""" > OMakeroot
+cat $(srcdir)/OMakeroot.default >> OMakeroot
+
+cat $(srcdir)/OMakefile.default > OMakefile
+cat $(srcdir)/success.ascii.root > success.ascii
+cat $(srcdir)/fail.ascii.root > fail.ascii
+mkdir -p TS
+cat $(srcdir)/TS/Configure.om > TS/Configure.om
+cat $(srcdir)/TS/Distribute.om > TS/Distribute.om
+cat $(srcdir)/TS/C.om > TS/C.om
+cat $(srcdir)/TS/CIF.om > TS/CIF.om
+cat $(srcdir)/TS/Compatibility.om > TS/Compatibility.om
+cat $(srcdir)/TS/LaTeX.om > TS/LaTeX.om
+cat $(srcdir)/TS/CIF_Studio.om > TS/CIF_Studio.om
+cat $(srcdir)/TS/CIF_build.om > TS/CIF_build.om
+cat $(srcdir)/TS/erlang.om > TS/erlang.om
+cat $(srcdir)/TS/STT.om > TS/STT.om
+cat $(srcdir)/TS/OCaml.om > TS/OCaml.om
+
+
+
+	
+
+
+println($"--- Building rebootstrap_and_reconfigure script")
+if $(equal $(OSTYPE), Win32)
+	echo $"""
+@del /F $(srcdir)\*.omc *.omc TS\*.omc
+@osh --force-dotomake $(srcdir)/bootstrap.osh %* 
+""" > rebootstrap_and_reconfigure.cmd
+	chmod(u+x, rebootstrap_and_reconfigure.cmd)
+else
+	echo $"""#! /bin/sh
+rm -f $(srcdir)/*.omc *.omc TS/*.omc
+osh --force-dotomake $(srcdir)/bootstrap.osh 
+""" > rebootstrap_and_reconfigure
+	chmod(u+x, rebootstrap_and_reconfigure)

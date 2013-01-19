@@ -1,0 +1,61 @@
+# pour compiler du C ou du ocaml avec erlang
+
+build_ERLANG_env() =
+	if $(not $(defined ERLANG_prefix))
+		ConfMsgError($"ERLANG_prefix is not defined !
+Define ERLANG_prefix in your $(host).om
+")
+	ERLANG_env() =
+		INCLUDES+= $(ERLANG_prefix)/include
+		LDFLAGS+=
+			if $(equal $(OSTYPE),Unix)
+				value -L $(ERLANG_prefix)/lib -lerl_interface -lei 
+			else	
+				value $(string $(ERLANG_prefix)/lib/erl_interface_md.lib) $(string $(ERLANG_prefix)/lib/ei_md.lib) ws2_32.lib
+
+		OCAML_LINK_FLAGS+=
+			if $(equal $(OSTYPE),Unix)
+				value -cclib -lpthread -cclib -lstdc++
+			else	
+				value $(EMPTY)
+
+		CXXFLAGS+=
+			if $(equal $(OSTYPE),Unix)
+				value $(EMPTY)
+			else	
+				value /D__WIN32__
+
+		CFLAGS+=
+			if $(equal $(OSTYPE),Unix)
+				value $(EMPTY)
+			else	
+				value /D__WIN32__
+
+		CXXFLAGS+=
+			if $(equal $(OSTYPE),Unix)
+				value $(EMPTY)
+			else	
+				value /D__WIN32__
+
+		OCAML_CLIBS+=
+			if $(equal $(OSTYPE),Unix)
+#				#value $(ERLANG_prefix)/lib/liberl_interface $(ERLANG_prefix)/lib/libei /usr/lib/libpthread /usr/lib/libc
+				value $(ERLANG_prefix)/lib/liberl_interface $(ERLANG_prefix)/lib/libei  
+			else
+				value $(string $(ERLANG_prefix)/lib/erl_interface_md)  $(string $(ERLANG_prefix)/lib/ei_md)
+
+		static. =
+			if $(not $(TS_VerboseCheckCXXHeader erl_interface.h))
+				ConfMsgError($"erl_interface.h not found !
+
+
+Check the value of ERLANG_prefix in your $(host).om
+(currently $(ERLANG_prefix))
+")
+
+		export
+	export
+
+
+build_ERLANG_env()
+

@@ -1,0 +1,90 @@
+##
+
+let lytrue = "#" ^ "#t"
+
+##
+
+\version "2.12.3"
+\header {}
+
+\include "drum1.ly"
+
+% ##= "hello world" ##
+
+mesa = {
+  <g d' g b d g>8
+  <g d' g b d g>
+  <g d' g b d g>
+  <g d' g b d g>
+  <fis cis' fis ais cis fis>16
+  r8.
+}
+
+mesb = {
+  <g d' g b d g>8
+  <g d' g b d g>
+  <g d' g b d g>
+  <g d' g b d g>
+  \set TabStaff.minimumFret = #0
+  <fis cis' fis ais cis e>16
+  r16
+  <fis cis' fis ais cis e>16
+  r16
+}
+
+mesc = {
+  \set TabStaff.minimumFret = #0
+  r8
+  <fis cis' fis ais cis e>8
+  r8
+  <fis cis' fis ais cis e>8
+  r8
+  <fis cis' fis ais cis e>8
+}
+
+accords = {
+  \set chordChanges = ##= lytrue##
+  \chordmode {
+    g2 fis4 |
+    g2 fis4 |
+    g2 fis4 |
+  }
+}
+
+symbols = \relative c {
+  \time 3/4
+  \tempo 4 = 120
+  \set TabStaff.minimumFret = #1
+  % \mesa | \mesa | \mesb | \mesc |
+  \mesa | \mesa | \mesb | \mesc |
+  \set TabStaff.minimumFret = #2
+  fis'8 g ais b cis d |
+  g <b,, b' d fis> |
+
+}
+
+
+\score {
+  <<
+    \new ChordNames { \accords }
+    \new Staff {\clef "treble_8" \symbols }
+    \new TabStaff { \symbols }
+  >>
+  \layout {}
+}
+
+\score {
+  <<
+    \new Staff {\clef "treble_8" \symbols }
+    \new DrumStaff <<
+      \new DrumVoice \symbol
+    >>
+    \new DrumStaff <<
+      \new DrumVoice \symbol
+    >>
+  >>
+  \midi {}
+}
+
+
+##

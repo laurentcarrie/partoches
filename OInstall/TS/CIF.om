@@ -1,0 +1,653 @@
+open TS/Configure
+open TS/C
+
+
+build_ACE_env() =
+	if $(or $(defined public.ACE_env) $(defined public.ace_env))
+		ConfMsgError($"Found an obsolete ACE_env() or ace_env() definition !
+
+In your $(host).om, simply define ACE_prefix and remove any ACE_env() or ace_env() definition
+These functions will be automatically defined
+")
+		exit(1)
+
+	if $(not $(defined ACE_prefix))
+		ConfMsgError($"ACE_prefix is not defined !
+
+Define ACE_prefix in your $(host).om
+")
+		exit(1)
+
+	ACE_env() =
+		INCLUDES += $(ACE_prefix)/include
+		LDFLAGS  += 
+			if $(equal $(OSTYPE),Win32) 
+				value $(ACE_prefix)/lib/ACE$(switch $(build), debug, d).lib
+			else
+				value -L$(ACE_prefix)/lib -lACE
+		static. =
+			if $(not $(TS_VerboseCheckCXXHeader ace/ACE.h))
+				ConfMsgError($"ace/ACE.h not found !
+
+Check the value of ACE_prefix in your $(host).om
+")
+				exit(1)
+		export
+
+	ace_env() =
+		ACE_env()
+		export
+	export
+
+build_ACE_env()
+
+# L'installation de CIF doit avoir ete localisee
+# avant l'inclusion de ce fichier
+public.CIF_bindir = $(dir $(CIF_prefix)/bin)
+public.CIF_libdir = $(dir $(CIF_prefix)/lib)
+public.CIF_includedir = $(dir $(CIF_prefix)/include)
+#public.CIF_nickname = $(concat _, $(nth-tl 1, $(split _, $(CIF_assembly))))
+public.CIF_om = $(add-wrapper $(CIF_libdir)/omake/TS/, .om, Configure Distribute C CIF Compatibility)
+if $(equal $(OSTYPE), Win32)
+	CIF_lib = $(file $(addsuffixes .lib .dll .pdb, $(CIF_bindir)/CIF_Facade))
+	export
+else
+	CIF_lib = $(file $(CIF_bindir)/libCIF_Facade.so)
+	export
+
+
+# Charge l'environnement CIF en completant
+# les variables INCLUDES, LIBS (win32) et LDFLAGS (linux)
+CIF_LoadEnvironment() =
+	switch $(assembly)
+	case CIF_NH_90
+		INCLUDES += $(CIF_includedir)
+		INCLUDES += $(CIF_includedir)/JFI_API
+		export
+	case CIF_JNTP
+		INCLUDES += $(CIF_includedir)
+		INCLUDES += $(CIF_includedir)/JFI_API
+		export
+	default 
+		INCLUDES += $(CIF_includedir)
+		export
+	if $(equal $(OSTYPE), Win32)
+		DLLS += $(CIF_bindir)/CIF_Facade
+		export
+	else
+		LDFLAGS += -Wl,--rpath -Wl,\$ORIGIN
+		DLLS += $(absname $(CIF_bindir))/CIF_Facade
+		export
+	export
+
+
+# Compat
+CIF_env() =
+	CIF_LoadEnvironment()
+	export
+
+
+
+
+
+################################################################################
+# <sched.h> et prototype des functions concernant la gestion des affinites
+
+
+static. =
+	if $(equal $(OSTYPE), Win32)
+		HAVE_SCHED_H = false
+		HAVE_NEW_SCHED_PROTO = false
+		export
+	else 
+		HAVE_SCHED_H = true
+		HAVE_NEW_SCHED_PROTO = $(TryCompileC $"""
+#include <sched.h>
+void foo() {
+	cpu_set_t set;
+	sched_setaffinity(0, 0, &set);
+	sched_getaffinity(0, 0, &set);
+}
+""")
+		export
+	ConfMsgChecking(whether <sched.h> provides recent prototypes for sched_\(get|set\)affinity)
+	ConfMsgYesNo($(HAVE_NEW_SCHED_PROTO))
+	export
+
+
+################################################################################
+# Generation des stubs CIF
+#
+
+if $(not $(defined public.USE_CMD))
+	public.USE_CMD = false
+	export
+
+public.CMD_OR_EXE =
+	if $(USE_CMD)
+		value $(CMD)
+	else
+		value $(EXE)
+
+
+.PHONY: XmlGeneratedFilesTarget
+
+public.XmlGeneratedFiles(files) =
+	XmlGeneratedFilesTarget: $(files)
+
+public.LocalXmlGeneratedFiles(files) =
+	.SCANNER: scan-cif-generator-%.xml: $(files)
+	export
+
+public.CIF_RubyGenerator = $(CIF_bindir)/CIF_OldGenerator$(CMD_OR_EXE)
+public.CIF_OCamlGenerator = $(CIF_bindir)/CIF_Generator$(EXE)
+public.CIF_CompiledGenerator = $(CIF_bindir)/CIF_CompiledGenerator$(EXE)
+public.CIF_Generator_options = --nolint --silent
+
+
+# Cette fonction liste les dependances directes d'un seul
+# fichier xml, elle ne descend pas l'aborescence
+public.xml_direct_dependencies(xml_file) =
+	deps[] =
+	q = $(string \")
+	awk(b, $(xml_file))
+	case $"<!--\([^-][^-]?[^>]?\)+-->"
+#		# Un commentaire mono ligne, on peut le sauter
+
+	case $"<!--"
+		raise $"$(fullname $(xml_file)): stumbled upon multiline XML comment"
+
+	case $"^ *<!ENTITY +\w+ +SYSTEM +$(q)\([^$(q)]+\)$(q) *>"
+		deps += $1
+		export
+
+	case $"ENTITY"
+		raise $"$(fullname $(xml_file)): stumbled upon uncaught XML entity"
+
+#	# find-in-path fonctionne uniquement sur le basename
+#	# du fichier recherche... va falloir decomposer la recherche
+	resolved_deps[] =
+	foreach(dep, $(set $(deps)))
+		dn = $(dirname $(dep))
+		fn = $(basename $(dep))
+		resolved_deps += $`(find-in-path $(addsuffix /$(dn), $(INCLUDES)), $(fn))
+		export
+	value $(set $(resolved_deps))
+
+
+# Resoud l'ensemble des dependances en evitant de se faire avoir
+# dans le cas d'inclusions circulaires
+public.xml_full_dependencies(xml_file) =
+	resolved_deps[] =
+	pending_deps[] =
+		$(xml_file)
+	while $(not $(equal $(length $(pending_deps)), 0))
+		resolved_deps = $(set $(resolved_deps) $(pending_deps))
+		pending_deps = $(set-diff $(set $(foreach $(xml_direct_dependencies), $(pending_deps))), $(resolved_deps))
+		export
+	value $(resolved_deps)
+
+
+# Par defaut on utilise dorenavant l'implementation OCaml
+if $(not $(defined public.CIF_GENERATOR_IMPL))
+	public.CIF_GENERATOR_IMPL = ocaml
+	export
+
+
+# L'implementation Ruby etant plutot lente, on utilise un scanner
+# en OMake pour les cas simples
+switch $(public.CIF_GENERATOR_IMPL)
+case ruby
+	public.CIF_Generator = $(CIF_RubyGenerator)
+	if $(not $(defined public.USE_OMAKE_XML_SCANNER))
+		public.USE_OMAKE_XML_SCANNER = true
+		export
+	export
+case ocaml
+	public.CIF_Generator = $(CIF_OCamlGenerator)
+	if $(not $(defined public.USE_OMAKE_XML_SCANNER))
+		public.USE_OMAKE_XML_SCANNER = false
+		export
+	export
+default
+	ConfMsgError($"in $(fullname .): invalid CIF_GENERATOR_IMPL value, valid ones are: ocaml, ruby")
+
+
+# Le scanner donnant les dependances precises des stubs CIF vers leurs fichiers xml
+# Notez l'utilisation de INCLUDES au lieu de PREFIXED_INCLUDES afin d'avoir toujours
+# des inclusions avec des -I
+if $(not $(defined public.DEBUG_OMAKE_XML_SCANNER))
+	public.DEBUG_OMAKE_XML_SCANNER = false
+	export
+
+.SCANNER: scan-cif-generator-%.xml: %.xml $(CIF_Generator) \
+	/.PHONY/XmlGeneratedFilesTarget :value: $(digest-in-path-optional $(INCLUDES), $&)
+	section
+		if $(USE_OMAKE_XML_SCANNER)
+			try
+				deps = $(string-escaped $(xml_full_dependencies $<))
+				stubs = $(string-escaped $(addprefix $(rootname $<), _shared.h _stub.h _stub.cpp))
+				if $(DEBUG_OMAKE_XML_SCANNER)
+					eprintln($"$(stubs): $(deps)")
+				println($"$(stubs): $(deps)")
+			catch String(msg)
+				eprintln($"$(string $(msg)): falling back to safe scanner")
+				$(CIF_Generator) $`(addprefix -I,$(dir $(INCLUDES))) --scan-dependencies $<
+		else
+			$(CIF_Generator) $`(addprefix -I,$(dir $(INCLUDES))) --scan-dependencies $<
+
+
+# Declare l'ensemble les regles de generation des stubs, le scanner utilise et tutti quanti
+# Variante pour les classes uom et messagerie
+CIF_GenerateStubs(classes) =
+	c_files = $(_CIF_GenerateStubs $(classes), false)
+	export .RULE
+	value $(c_files)
+
+
+# Pour les modeles au sens CIF, car ils ont un fichier _modes.h supplementaire
+CIF_GenerateModelCallbackStubs(classes) =
+	c_files = $(_CIF_GenerateStubs $(classes), true)
+	export .RULE
+	value $(c_files)
+
+
+.PHONY: gencheck
+
+
+# La regle generale, ne devrait jamais etre appelee si ce n'est par l'une des fonctions ci-dessus
+_CIF_GenerateStubs(classes, generates_modes_h) =
+	c_files =
+	foreach(class, $(classes))
+		local_c_files = $(class)_shared.h $(class)_stub.h $(class)_stub.cpp
+		if $(generates_modes_h)
+			local_c_files += $(class)_modes.h
+			export
+
+		$(local_c_files): $(class).xml $(CIF_Generator) $(CIF_prefix)/CIF_Generator/src/CIF_Generator/dtd/CIF.dtd :scanner: scan-cif-generator-$(class).xml
+			$(CIF_Generator) $`(addprefix -I,$(dir $(INCLUDES))) $(CIF_Generator_options) $<
+		c_files += $(local_c_files)
+
+		$(addprefix .mlgen/, $(local_c_files) $(class).deps): $(class).xml $(CIF_OCamlGenerator) $(CIF_prefix)/CIF_Generator/src/CIF_Generator/dtd/CIF.dtd
+			section
+				mkdir -p .mlgen
+				includes = $(dir $(INCLUDES))
+				$(CIF_OCamlGenerator) $`(addprefix -I,$(includes)) --scan-dependencies $< > .mlgen/$(class).deps
+				cd .mlgen
+				$(CIF_OCamlGenerator) $`(addprefix -I,$(includes)) $(CIF_Generator_options) $<
+
+		$(addprefix .rbgen/, $(local_c_files) $(class).deps): $(class).xml $(CIF_RubyGenerator) $(CIF_CompiledGenerator)
+			section
+				mkdir -p .rbgen
+				includes = $(dir $(INCLUDES))
+				$(CIF_RubyGenerator) $`(addprefix -I,$(includes)) --scan-dependencies $< > .rbgen/$(class).deps
+				cd .rbgen
+				$(CIF_RubyGenerator) $`(addprefix -I,$(includes)) $(CIF_Generator_options) $<
+
+		foreach(local_file, $(local_c_files) $(class).deps)
+			gencheck: .mlgen/$(local_file) .rbgen/$(local_file)
+				diff -bB $^ || (gvim -d -R -c "set diffopt+=iwhite" $^; exit 1)
+			export .RULE
+
+		export
+	LocalCGeneratedFiles($(c_files))
+	export .RULE
+	value $(file $(c_files))
+
+
+
+
+
+################################################################################
+# Generation des assemblages
+
+.PHONY: YmlGeneratedFilesTarget
+
+public.YmlGeneratedFiles(files) =
+	YmlGeneratedFilesTarget: $(files)
+
+public.LocalYmlGeneratedFiles(files) =
+	.SCANNER: scan-cif-assembly-builder-%.yml: $(files)
+	export
+
+public.CIF_AssemblyBuilder = $(CIF_bindir)/CIF_AssemblyBuilder$(CMD)
+
+# Le scanner donnant les dependances precises d'un assemblage vers les manifests de ses layers
+.SCANNER: scan-cif-assembly-builder-%.yml: %.yml $(CIF_AssemblyBuilder) /.PHONY/YmlGeneratedFilesTarget
+	$(CIF_AssemblyBuilder) generate --dependencies -I $(CIF_AssemblyBuilder_include) $<
+
+
+# Declare l'ensemble les regles de generation des stubs, le scanner utilise et tutti quanti
+# Variante pour les classes uom et messagerie
+CIF_GenerateAssembly(assembly_name, assembly_file, manifests_dir) =
+	c_files = $(assembly_name).h $(assembly_name).cpp
+	LocalCGeneratedFiles($(c_files))
+	CIF_AssemblyBuilder_include = $(manifests_dir)
+	$(c_files): $(assembly_file) $(CIF_AssemblyBuilder) :scanner: scan-cif-assembly-builder-$(assembly_file)
+		$(CIF_AssemblyBuilder) generate -I $(CIF_AssemblyBuilder_include) -C concept.yml $<
+	export .RULE
+	value $(file $(c_files))
+
+
+
+# Declare les regles pour la generation des manifests a partir d'une liste de layer sans leur extension
+# Notez la dependance sur le .hc qui n'est pas en soit necessaire, mais elle permet d'eviter
+# le montage explicite des sources de CIF_bookshelf
+# Renvoie la liste des fichiers yml generes
+CIF_GenerateManifests(layers) =
+	yml_files = $(addsuffix .yml, $(layers))
+	LocalYmlGeneratedFiles($(yml_files))
+	foreach(layer, $(layers))
+		$(layer).yml: $(layer).h $(layer).hc $(CIF_AssemblyBuilder)
+			$(CIF_AssemblyBuilder) manifest $(layer).h
+		export .RULE
+	export .RULE
+	value $(file $(yml_files))
+
+
+
+
+
+################################################################################
+# Generation des extensions ruby
+
+Ruby. =
+	config(arg) =
+		value $(shell ruby -rrbconfig -e 'puts Config::CONFIG["$(arg)"]')
+
+	this.archdir = $(config archdir)
+	this.rubylibdir = $(config rubylibdir)
+	this.CC = $(config CC)
+	this.CFLAGS = $(config CFLAGS)
+	this.OUTFLAG = $(config OUTFLAG)
+	this.LIBRUBYARG_SHARED = $(config LIBRUBYARG_SHARED)
+	this.LIBS = $(config LIBS)
+	this.LIBRUBYARG_STATIC = $(config LIBRUBYARG_STATIC)
+
+ruby(arg)= 
+	value $(shell ruby -rrbconfig -e 'puts Config::CONFIG["$(arg)"]')
+
+rubyb(a,b)=
+	value $(shell ruby -rrbconfig -e 'puts Config::CONFIG["$(a)"] % Config::CONFIG["$(b)"]')
+
+
+# Definit la regle permettant d'embedder un script et toute son arborescence
+# dans une extension ruby compilee
+# Notez l'utilisation de :effects: afin d'eviter la generation parallele
+# de 2 extensions dans le meme repertoire
+# Renvoie l'extension generee
+public.BUILD_STARTUP_SCRIPT = true
+if $(EMBED_MANIFESTS) 
+	public.CIF_RUBY_EMBEDDER_FLAGS = --quiet --vc8
+	export
+else
+	public.CIF_RUBY_EMBEDDER_FLAGS = --quiet
+	export
+CIF_EmbedRubyScript(module, main, sources) =
+	if $(equal $(length $(file $(sources))), 0)
+		ConfMsgError($"in $(fullname .): empty source list !")
+	absmain = $(absname $(main))
+	targets[] =
+		$(bindir)/$(module).so
+	$(bindir)/$(module).so: $(CIF_bindir)/CIF_RubyEmbedder.so $(main) $(sources)
+	  	rm -rf .$(module)
+		mkdir -p .$(module)
+		section
+			cd .$(module)
+			ruby -I $(dirname $<) -r $(basename $<) \
+				-e 'CIF_RubyEmbedder.debug = true; CIF_RubyEmbedder.run' \
+				-- $(CIF_RUBY_EMBEDDER_FLAGS) --module $(module) $(absmain)
+			unsetenv(MAKEFLAGS MAKELEVEL MAKE_MODE)
+			if $(equal $(OSTYPE), Win32)
+				semicolon = $(string ;)
+				ruby extconf.rb > NUL
+				nmake /S
+				if $(EMBED_MANIFESTS) 
+					mt.exe -manifest $(basename $@).manifest -outputresource\:$(basename $@)$(semicolon)2
+			else
+				ruby extconf.rb > /dev/null
+				make --quiet
+			mkdir -p $(dirname $@)
+			cp $(basename $@) $@
+			chmod(a-x, $@)
+
+	if $(BUILD_STARTUP_SCRIPT)
+		$(bindir)/$(module)$(CMD): $(bindir)/$(module).so
+			section
+				f = $(fopen $@, w)
+				if $(equal $(OSTYPE), Win32)
+					fprintln($(f), @REM $(digest $<) $(basename $<))
+					fprintln($(f), $""@ruby -I "%~dp0." -W0 -r $(module) -e $(module).run -- %*"")
+				else
+					fprintln($(f), \#! /bin/sh)
+					fprintln($(f), \# $(digest $<) $(basename $<))
+					fprintln($(f), $""exec ruby -I "$(string \$)(cd "$(string \$)(dirname "$(string \$)0")" && pwd)" -r $(module) -e $(module).run -- $(string \"\$@\")"")
+				close($(f))
+				chmod(a+x, $@)
+
+		targets += $(bindir)/$(module)$(CMD)
+		export
+
+	export .RULE
+	value $(file $(targets))
+
+
+
+# La meme chose avec la production d'un lanceur .exe sous Windows permettant
+# de contourner certaines limitations de cmd.exe concernant les quotations
+# NE PAS UTILISER EN DEHORS DU BUILD DE CIF (cmdline_wrapper n'est pas
+# disponible)
+#
+public.STARTUP_SCRIPT_DEPS[] =
+
+CIF_EmbedRubyScript2(module, main, sources) =
+	BUILD_STARTUP_SCRIPT = false
+	CIF_CmdlineWrapper = $(builddir)/CIF_OInstall/cmdline_wrapper/cmdline_wrapper$(EXE)
+	targets = $(CIF_EmbedRubyScript $(module), $(main), $(sources))
+
+	if $(not $(defined STARTUP_SCRIPT_CMDLINE))
+		STARTUP_SCRIPT_CMDLINE[] =
+			ruby$(EXE)
+			-I
+			\:
+			-W0
+			-r
+			$(module)
+			-e
+			$(module).run
+			--
+		export
+
+	if $(equal $(OSTYPE), Win32)
+		.$(module)_launcher/$(module).c: $(bindir)/$(module).so $(CIF_CmdlineWrapper) $(STARTUP_SCRIPT_DEPS)
+			mkdir -p $(dirname $@)
+			$(builddir)/CIF_OInstall/cmdline_wrapper/cmdline_wrapper \
+				--lang C --digest $< $(mapprefix --digest, $(STARTUP_SCRIPT_DEPS)) -- \
+				$(public.STARTUP_SCRIPT_CMDLINE) \
+				> $@
+
+		.$(module)_launcher/$(module).obj: .$(module)_launcher/$(module).c
+			$(CC) $(CFLAGS) /Fo$@ /Fd$(removesuffix $@).pdb -c $<
+
+		$(bindir)/$(module).exe: .$(module)_launcher/$(module).obj
+			mkdir -p $(dirname $@)
+			$(CC) $(CFLAGS) /Fe$@ $< /link /INCREMENTAL\:NO
+
+		$(bindir)/$(module).cmd: $(bindir)/$(module).so $(CIF_CmdlineWrapper) $(STARTUP_SCRIPT_DEPS)
+			mkdir -p $(dirname $@)
+			$(builddir)/CIF_OInstall/cmdline_wrapper/cmdline_wrapper \
+				--lang Cmd --digest $< $(mapprefix --digest, $(STARTUP_SCRIPT_DEPS)) -- \
+				$(public.STARTUP_SCRIPT_CMDLINE) \
+				> $@
+
+		targets += $(bindir)/$(module).exe
+		targets += $(bindir)/$(module).cmd
+		export
+	else
+		$(bindir)/$(module): $(bindir)/$(module).so $(CIF_CmdlineWrapper) $(STARTUP_SCRIPT_DEPS)
+			mkdir -p $(dirname $@)
+			$(builddir)/CIF_OInstall/cmdline_wrapper/cmdline_wrapper \
+				--lang Sh --digest $< $(mapprefix --digest, $(STARTUP_SCRIPT_DEPS)) -- \
+				$(public.STARTUP_SCRIPT_CMDLINE) \
+				> $@
+			chmod(a+x, $@)
+
+		targets += $(bindir)/$(module)
+		export
+
+	export .RULE
+	value $(file $(targets))
+
+
+
+
+################################################################################
+# Generation IDB
+
+.PHONY: IDBCreationTarget
+
+public.IDBCreation(files) =
+	IDBCreationTarget: $(files)
+
+public.LocalIDBCreation(files) =
+	.SCANNER: scan-cif-idb-%: $(files)
+	export
+
+public.CIF_IDB = $(CIF_bindir)/CIF_IDB$(CMD_OR_EXE)
+
+public.PGHOST =
+	if $(defined PGHOST)
+		value $(PGHOST)
+	else
+		value localhost
+
+public.PGPORT =
+	if $(defined PGPORT)
+		value $(PGPORT)
+	else
+		value $"5432"
+
+public.PGUSER =
+	if $(defined PGUSER)
+		value $(PGUSER)
+	else
+		value $(USER)
+
+public.PGLOCALE =
+	if $(defined PGLOCALE)
+		value $(PGLOCALE)
+	else
+		value $(EMPTY)
+
+# Scanner donnant la liste des fichiers generes
+#.SCANNER: scan-cif-idb-%.sql: %.sql $(CIF_IDB) /.PHONY/IDBCreationTarget
+#	$(CIF_IDB) dbgenerator --dependencies 
+
+CIF_CreateIDB(dbname, sqlfile) =
+	log = $(file $(builddir)/.idb_creation_log)
+	$(dbname).log: $(sqlfile) :effects: $(log)
+		if $(test ! -e $(log))
+			echo Loading $(dbname) > $(log)
+		else
+			echo Reloading $(dbname) >> $(log)
+		try
+			dropdb -e -h $(PGHOST) -p $(PGPORT) -U $(PGUSER) $(dbname) >> $(log)
+		default
+		createdb -e $(if $(gt $(PGLOCALE.length), 0),-E $(PGLOCALE)) \
+			-h $(PGHOST) -p $(PGPORT) -U $(PGUSER) $(dbname) >> $(log)
+		psql -q -h $(PGHOST) -p $(PGPORT) -U $(PGUSER) -f $< $(dbname) >> $(log)
+		echo Done with $(dbname) >> $(log)
+		cat $(sqlfile) > $(dbname).log
+
+	.PHONY: dropdb-$(dbname)
+	dropdb-$(dbname): :effects: $(log)
+		rm -f $(dbname).log
+		try
+			dropdb -e -h $(PGHOST) -p $(PGPORT) -U $(PGUSER) $(dbname) > $(log)
+		default
+
+	.PHONY: dropdb
+	dropdb: dropdb-$(dbname)
+
+	export .RULE
+	value $(file $(dbname).log)
+
+
+# Generation d'un IDB
+if $(not $(defined public.CIF_IDB_VERBOSE))
+	public.CIF_IDB_VERBOSE = false
+	export
+
+if $(not $(defined public.CIF_IDB_PROFILE))
+	public.CIF_IDB_PROFILE = false
+	export
+
+CIF_GenerateIDB(expected_sources, expected_libraries, installation_prefix, dbname, sqlfile) =
+	lib_header(lib) =
+		value $(file generated_idb/$(lib)/$(lib).h)
+	target_libraries_without_ext = $(addprefix $(installation_prefix)/bin/$(PRE_LIB)CIF_Generated_, $(expected_libraries))
+	if $(equal $(OSTYPE), Win32)
+		target_libraries = $(file $(addsuffixes .lib .dll .pdb, $(target_libraries_without_ext)))
+		export
+	else
+		target_libraries = $(file $(addsuffix .so, $(target_libraries_without_ext)))
+		export
+
+	target_sources = $(set $(expected_sources) $(foreach $(lib_header), $(expected_libraries)))
+	expected_protocols[] =
+	foreach(expected_source, $(expected_sources))
+		match $(expected_source)
+		case $"CIF_Protocol_Handler_\([^.]*\)"
+			expected_protocols += $1
+			export
+		export
+	expected_protocols = $(set $(expected_protocols))
+
+#	# Notez l'utilisation de :effects:, car la creation de bases de donnees
+#	# verrouille fugitivement la base template1 ce qui peut provoquer des erreurs
+#	# de creation de base de donnees
+	LocalCGeneratedFiles($(filter %.h %.hc %.cpp, $(target_sources)))
+	LocalXmlGeneratedFiles($(filter %.xml, $(target_sources)))
+	$(target_sources) $(target_libraries): \
+	$(CIF_IDB) $(CIF_om) $(CIF_lib) $(CIF_Generator) $(CIF_CreateIDB $(dbname), $(sqlfile))
+		$(CIF_IDB) migrate \
+			$(if $(CIF_IDB_VERBOSE), --verbose) \
+			--database $(dbname) --hostname $(PGHOST) --port $(PGPORT) \
+			--username $(PGUSER)
+		$(CIF_IDB) dbgenerator \
+			$(if $(CIF_IDB_VERBOSE), --verbose) \
+			--database $(dbname) --hostname $(PGHOST) --port $(PGPORT) \
+			--username $(PGUSER) --directory $(absname .)
+		foreach(expected_protocol, $(expected_protocols))
+			$(CIF_IDB) dbgenerator \
+				$(if $(CIF_IDB_VERBOSE), --verbose) \
+				--database $(dbname) --hostname $(PGHOST) --port $(PGPORT) \
+				--username $(PGUSER) --directory $(absname .) \
+				--protocol_handler $(expected_protocol)
+		section
+			cd generated_idb
+			PATH = $(array $(absname $(CIF_bindir)), $(PATH))
+			OMAKEPATH = $(array $(absname $(CIF_prefix)/lib/omake), $(OMAKEPATH))
+			omake \
+				$(if $(CIF_IDB_PROFILE), PROFILE=1) \
+				$(if $(CIF_IDB_VERBOSE), --verbose) \
+				--configure --no--progress \
+				prefix=$(installation_prefix) \
+				assembly=$(CIF_sub_assembly) \
+				build=$(build)
+
+	gencheck: $(target_sources) 
+		section
+			cd generated_idb
+			PATH = $(array $(absname $(CIF_bindir)), $(PATH))
+			OMAKEPATH = $(array $(absname $(CIF_prefix)/lib/omake), $(OMAKEPATH))
+			omake \
+				$(if $(CIF_IDB_VERBOSE), --verbose) \
+				--configure --no--progress \
+				prefix=$(installation_prefix) \
+				assembly=$(CIF_sub_assembly) \
+				build=$(build) \
+				gencheck
+
+	export .RULE
+	value $(file $(target_libraries))

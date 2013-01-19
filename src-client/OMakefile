@@ -1,0 +1,23 @@
+.PHONY: build
+.DEFAULT: build
+
+
+partoche.dll : ../src-web/partoche.dll
+	cp $< $@
+
+
+deps[]=
+	partoche.dll
+
+make_prog(name) =
+	$(name).exe : $(name).cs $(deps)
+		mcs -r\:System.Web.Services -r\:partoche -r\:System.Drawing -r\:System.Windows.Forms -r\:System.Data $<
+	export .RULE
+
+
+#make_prog(test)
+
+#build : test.exe
+
+
+TS_InstallFiles(build,web,test.aspx)

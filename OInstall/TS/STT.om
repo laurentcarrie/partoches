@@ -1,0 +1,68 @@
+open TS/Configure
+open TS/C
+
+libprefix= 
+	if $(equal $(OSTYPE),Unix)
+		value lib
+	else
+		value $(EMPTY)
+
+# ce qu'il faut pour faire une appli avec STT, si on est dehors du build de CIF
+STT_env() =
+	ERLANG_env()
+	INCLUDES += $(CIF_includedir)
+        STT_generator= $(CIF_bindir)/stt_gen$(EXE)
+	LIBS += $(CIF_bindir)/stt_probe
+        OCAMLPACKS+= stt
+	export
+
+# ce qu'il faut pour faire une appli avec STT, si on est *dans* le build de CIF
+local_STT_env() =
+	STT_env()
+	if $(defined-env OCAMLPATH)
+	        setenv(OCAMLPATH,$(absname $(CIF_prefix))/lib/ocamlfind$(PATHSEP)$(getenv OCAMLPATH))
+		export
+	else
+	        setenv(OCAMLPATH,$(absname $(CIF_prefix))/lib/ocamlfind)
+		export
+	TS_OCAML_SCAN_DEPS+= $(prefix)/lib/ocamlfind/stt/META
+	LocalOCamlGeneratedFiles($(file $(CIF_prefix)/bin/stt_gen$(EXE)))
+	LocalCGeneratedFiles($(file $(CIF_prefix)/bin/stt_gen$(EXE)))
+	if $(equal $(OSTYPE),Unix)
+		LocalOCamlGeneratedFiles($(file $(CIF_prefix)/bin/libstt_stubs.so))
+		LocalCGeneratedFiles($(file $(CIF_prefix)/bin/libstt_stubs.so))
+		export
+	LocalOCamlGeneratedFiles($(file $(CIF_prefix)/lib/ocamlfind/stt/META))
+	LocalCGeneratedFiles($(prefix)/include/stt/stt_probe.h)
+	export
+
+
+STT_probe(tag,f)=
+	LocalCGeneratedFiles($(f)_probe.h)
+	LocalCGeneratedFiles($(f)_probe.cpp)
+	LocalOCamlGeneratedFiles($(f)_pilot.mli)
+	LocalOCamlGeneratedFiles($(f)_pilot.ml)
+
+	PATH = $(array $(absname $(CIF_bindir)), $(PATH))
+	LD_LIBRARY_PATH = 
+		if $(defined-env LD_LIBRARY_PATH)
+			value $(LD_LIBRARY_PATH)
+		else
+			value $(EMPTY)
+	LD_LIBRARY_PATH	= $(array $(absname $(CIF_bindir)), $(LD_LIBRARY_PATH))
+
+	targets[]=
+		$(f)_pilot.ml
+		$(f)_pilot.mli
+		$(f)_probe.h
+		$(f)_probe.cpp
+
+	$(targets) : $f.json $(STT_generator)
+		$(STT_generator) --verbose --json $f.json
+
+	$(tag) : $(OCamlLibrary $(f)_pilot,$(f)_pilot)
+
+	export .RULE
+
+
+

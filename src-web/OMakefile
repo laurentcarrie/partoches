@@ -1,0 +1,33 @@
+.PHONY: build
+.DEFAULT: build
+
+
+
+make_wsdl(name) = 
+	log = $(file .make_wsdl)
+	$(name).cs : $(name).asmx web.config :effects: $(log)
+		section
+			killall -9 mono || echo ""
+			xsp4 --nonstop &
+			sleep 1
+			wsdl2 http\://localhost\:8080/$(name).asmx?WSDL
+			killall -9 mono || echo ""
+
+
+	$(name).dll : $(name).cs
+		mcs /t\:library $(name).cs -r\:System.Web.Services 
+
+	export .RULE
+	value $(file $(name).dll $(name).cs)
+
+
+make_wsdl(partoche)
+
+TS_InstallFiles(build,web,web.config partoche.asmx)
+
+TS_InstallBinFiles(build,partoche-xsp)
+
+#TS_InstallFiles(build,web/bin,partoche.dll)
+TS_InstallFiles(build,web,partoche.dll)
+#TS_InstallFiles(build,web,partoche.cs)
+

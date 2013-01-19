@@ -1,0 +1,26 @@
+.PHONY: build pdf test
+.DEFAULT: build
+
+USE_OCAMLFIND=true
+OCAMLFLAGS= -g -dtypes -warn-error A
+BYTE_ENABLED= false
+NATIVE_ENABLED= true
+OCAMLPACKS= str,extlib,json-wheel
+
+USEPDFLATEX=true 
+
+
+build : drum1.ly
+
+OCAMLINCLUDES+= ../src
+OCAML_LIBS+=../src/partoche
+
+
+
+OCamlProgram(x,mood_for_a_day)
+
+mood_for_a_day.json : x
+	$(shell $<)
+
+
+TS_InstallFiles(build,web,mood_for_a_day.json)

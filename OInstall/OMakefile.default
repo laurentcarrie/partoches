@@ -1,0 +1,72 @@
+
+# On verifie la presence des cots
+if $(equal $(OSTYPE), Win32)
+	TS_CheckProg(cl)
+	TS_CheckProg(pskill)
+else
+	TS_CheckProg(g++)
+	TS_CheckProg(killall)
+
+TS_CheckProg(lilypond)
+
+# Nous validons que nous avons bien OCaml >= 3.11.0
+# Dans les versions connues, ocaml -version renvoie qqc du genre
+# The Objective Caml toplevel, version x.y.z
+if $(equal $(OSTYPE), Win32)
+	TS_CheckProg(flexlink)
+TS_CheckProg(ocamlc)
+TS_CheckProg(ocamlopt)
+TS_CheckProg(ocamlfind)
+ConfMsgChecking(ocaml version)
+
+#ocaml_version = 
+#	ocamlc -version > ocaml.version
+#	value $(cat ocaml.version)	
+
+ocaml_version= 3.12.1
+
+match $(ocaml_version)
+case $'\([0-9]+\)\.\([0-9]+\)\.\([0-9]+\)'
+	ocaml_version = $1.$2.$3
+	ocaml_major = $(int $1)
+	ocaml_minor = $(int $2)
+	ocaml_release = $(int $3)
+	ConfMsgResult($(ocaml_version))
+	if $(or \
+		$(lt $(ocaml_major), 3), \
+		$(and $(eq $(ocaml_major), 3), $(lt $(ocaml_minor), 11)))
+		ConfMsgError($"CIF requires ocaml >= 3.11.0") 
+default
+	ConfMsgResult(bad version string)
+	ConfMsgError($"Unable to parse '$(ocaml_version)'")
+
+
+# Pour afficher une ptite image a la fin d'omake
+# pas trouve la licence pour ces images : eviter de les distribuer dans un package CIF ou CIF_Studio !
+.BUILD_SUCCESS:
+	cat $(builddir)/success.ascii
+
+.BUILD_FAILURE:
+	cat $(builddir)/fail.ascii
+
+# Les cibles de base de omake pour generer, installer, livrer CIF
+.PHONY: build doc all dist www
+
+
+# Pour les anciennes habitudes
+all: build doc
+
+
+
+# Recapitulatif
+println($"--- Using the following configuration:
+
+
+	Source directory ...... $(absname $(srcdir))
+	Build directory ....... $(absname $(builddir))
+	Installation prefix ... $(absname $(prefix))
+
+")
+
+
+.SUBDIRS : src src-web src-client test
