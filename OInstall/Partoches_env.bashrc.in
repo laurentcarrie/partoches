@@ -1,5 +1,0 @@
-prefix="$(cd $(dirname "$BASH_SOURCE") && pwd)"
-export Partoches_ROOT="${prefix}"
-export PATH="${prefix}/bin:${PATH}"
-export LD_LIBRARY_PATH="${prefix}/bin:${LD_LIBRARY_PATH}"
-export OCAMLPATH="${prefix}/lib/ocamlfind:${OCAMLPATH}"
