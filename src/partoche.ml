@@ -39,14 +39,13 @@ open Util
     let fout = open_out filename in
     let p fs = kfprintf ( fun fout -> ())  fs in 
       p fout "
-\\documentclass[12pt]{article}
+\\documentclass{article}
 \\usepackage[T1]{fontenc}
 \\usepackage[latin1]{inputenc}
 \\usepackage{makeidx}
 \\usepackage{verbatim}
 \\usepackage{tabularx}
 \\begin{document}
-\\fontsize{14}{14}\\selectfont
 
 "  ; 
       p fout "Structure : \\begin{itemize} \n" ;

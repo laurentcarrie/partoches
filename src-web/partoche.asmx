@@ -108,6 +108,41 @@ public class partoche : WebService
     return ll ;
   }
 
+[WebMethod]
+public string generate(string fileName) {
+    try {
+   Console.WriteLine("generate all for {0}",fileName) ;
+    Random random = new Random();
+    int randomNumber = random.Next(0,100) ;
+      ProcessStartInfo startInfo = new ProcessStartInfo();
+      startInfo.CreateNoWindow = false;
+      startInfo.UseShellExecute = false;
+      startInfo.FileName = "partoche" ;
+      startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+      startInfo.Arguments = string.Format ("--verbose --all --json-id {0} {1}",randomNumber,fileName) ;
+      startInfo.RedirectStandardOutput = false ;
+      startInfo.RedirectStandardError = true;
+      // Start the process with the info we specified.
+      // Call WaitForExit and then the using statement will close.
+      using (Process exeProcess = Process.Start(startInfo))
+	{
+	  using (StreamReader reader = exeProcess.StandardError)
+	    {
+	      string result = reader.ReadToEnd();
+	      // ll.Add(result) ;
+	    }
+	  exeProcess.WaitForExit();
+	}
+    }
+    
+    catch (Exception ex)
+      {
+        // return the error message if the operation fails
+	// ll.Add(ex.Message.ToString()) ;
+      }
+
+	return "ok" ;
+}
 
 [WebMethod]
 public string UploadFile(byte[] f, string fileName)

@@ -10,8 +10,8 @@ OCAMLPACKS= str,extlib,json-wheel
 
 build : partoche.mli
 
-OCamlGeneratedFiles(../OInstall/version.ml)
-version=$(gets ../VERSION)
+OCamlGeneratedFiles(version.ml)
+version=$(gets ../OInstall/VERSION)
 version.ml : 
        echo "let version = \"$(version)\"" > $@        
 

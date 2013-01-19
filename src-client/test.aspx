@@ -7,7 +7,10 @@ void populate() {
    GreetList.Items.Clear() ;
    foreach ( partoche.MyFileInfo s in p.ls() ) {
 	Console.WriteLine ("test.aspx -----> {0}",s) ;
-	   GreetList.Items.Add(string.Format("{0} : {1}",s.path,s.filename)) ;
+	ListItem li = new ListItem() ;
+	li.Value = string.Format("{0}/{1}",s.path,s.filename) ;
+	li.Text  = string.Format("{0} : {1}",s.path,s.filename) ;
+	GreetList.Items.Add(li) ;
    }
    GreetList.SelectedIndex=0 ;
 }
@@ -16,6 +19,10 @@ void onLoad() {
   populate() ;
 }
 
+void generate_Click(Object sender,EventArgs e) {
+   partoche.partoche p = new partoche.partoche();
+   p.generate(GreetList.SelectedItem.Value) ;
+}
 
 void populate_Click(Object sender, EventArgs e) {
 	populate() ;
@@ -51,6 +58,8 @@ void runWebService_Click(Object sender, EventArgs e)
 <br/>
       <asp:Button id="runService" onclick="runWebService_Click" runat="server" Text="Run the Service"></asp:Button>
       <asp:Button id="populate_btn" onclick="populate_Click" runat="server" Text="populate"></asp:Button>
+      <asp:Button id="generate_btn" onclick="generate_Click" runat="server" Text="generate"></asp:Button>
+
 
 
 <asp:DropDownList runat="server" id="GreetList" autopostback="true">

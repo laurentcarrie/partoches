@@ -15,8 +15,8 @@ let main () =
       List.map add [
 	"verbose","verbose" ;
 	"pdf","generate pdf" ;
-	"beautify","beautify json file" ;
 	"all","generate all midi and pdf" ;
+	"beautify","beautify json file" ;
 	"midi","generate midi files" ;
 	"song","generate song files (if --midi or --pdf) " ;
 	"drums","generate drums track" ;
