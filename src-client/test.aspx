@@ -39,6 +39,25 @@ void runWebService_Click(Object sender, EventArgs e)
 }
 
 
+  void PopulateNode(Object sender, TreeNodeEventArgs e)
+  {
+/*
+TreeNode node = e.Node ;
+        TreeNode newNode = new TreeNode();
+        newNode.Text = "du texte" ;
+        newNode.Value = "une valeur" ;
+
+        // Set the PopulateOnDemand property to true so that the child nodes can be 
+        // dynamically populated.
+        newNode.PopulateOnDemand = true;
+
+        // Set additional properties for the node.
+        newNode.SelectAction = TreeNodeSelectAction.Expand;
+
+        // Add the new node to the ChildNodes collection of the parent node.
+        node.ChildNodes.Add(newNode);
+*/
+  }
 
 </script>
 <html>
@@ -64,6 +83,26 @@ void runWebService_Click(Object sender, EventArgs e)
 
 <asp:DropDownList runat="server" id="GreetList" autopostback="true">
 </asp:DropDownList>
+
+      <h3>TreeView PopulateNodesFromClient Example</h3>
+
+      <asp:TreeView id="LinksTreeView"
+        Font-Names= "Arial"
+        ForeColor="Blue"
+        EnableClientScript="true"
+        PopulateNodesFromClient="true"  
+        OnTreeNodePopulate="PopulateNode"
+        runat="server">
+
+        <Nodes>
+
+          <asp:TreeNode Text="Inventory" 
+            SelectAction="Expand"  
+            PopulateOnDemand="true"/>
+
+        </Nodes>
+
+      </asp:TreeView>
 
 
 </form>
