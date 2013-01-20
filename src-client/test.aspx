@@ -39,10 +39,12 @@ void runWebService_Click(Object sender, EventArgs e)
 }
 
 
-  void PopulateNode(Object sender, TreeNodeEventArgs e)
+void PopulateNode(Object sender, TreeNodeEventArgs e)
   {
-/*
-TreeNode node = e.Node ;
+	TreeNode node = e.Node ;
+	Console.WriteLine("depth : {0}",node.Depth) ;
+	if (node.Depth < 5) {
+	for (int i=0 ;i<3;++i) { 
         TreeNode newNode = new TreeNode();
         newNode.Text = "du texte" ;
         newNode.Value = "une valeur" ;
@@ -56,7 +58,8 @@ TreeNode node = e.Node ;
 
         // Add the new node to the ChildNodes collection of the parent node.
         node.ChildNodes.Add(newNode);
-*/
+	}
+}
   }
 
 </script>
@@ -83,16 +86,19 @@ TreeNode node = e.Node ;
 
 <asp:DropDownList runat="server" id="GreetList" autopostback="true">
 </asp:DropDownList>
+</form>
+
+
+    <form id="form1" runat="server">
 
       <h3>TreeView PopulateNodesFromClient Example</h3>
 
       <asp:TreeView id="LinksTreeView"
-        Font-Names= "Arial"
-        ForeColor="Blue"
         EnableClientScript="true"
         PopulateNodesFromClient="true"  
         OnTreeNodePopulate="PopulateNode"
         runat="server">
+
 
         <Nodes>
 
@@ -104,9 +110,11 @@ TreeNode node = e.Node ;
 
       </asp:TreeView>
 
+      <br /><br />
 
-</form>
+      <asp:Label id="Message" runat="server"/>
 
+    </form>
 
 </body>
 </html>
