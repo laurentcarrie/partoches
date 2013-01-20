@@ -45,7 +45,7 @@ let generate_pdf_struct t =
   let fout = open_out filename in
   let p fs = kfprintf ( fun fout -> ())  fs in 
     p fout "
-\\documentclass[12pt]{article}
+\\documentclass{article}
 %% ##############################################################################
 %% ### Parametres de la page
 %% ##############################################################################
@@ -70,8 +70,6 @@ let generate_pdf_struct t =
 \\usepackage[latin1]{inputenc}
 \\usepackage{multicol}
 \\usepackage{paralist}
-\\renewcommand{\\rmdefault}{ptm}
-\\rmfamily
 \\usepackage[pdftex]{graphicx}
 
 \\newcommand{\\makechord}[1]{\\textbf{##1}}
