@@ -1,0 +1,24 @@
+
+.jsontreeview {
+background-color:#e0ffff;
+
+}
+
+.jsontreeview_edit {
+color:red;
+background-color:#e0ff00;
+
+}
+
+.jsontreeview_string {
+color:black;
+}
+
+.jsontreeview_title {
+color:red;
+font-style:italic;
+text-decoration:underline;
+
+
+
+}

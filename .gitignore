@@ -1,2 +1,5 @@
+*.pdf
 *~
-_build
+*.midi
+*.ps
+

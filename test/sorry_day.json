@@ -1,0 +1,60 @@
+{
+  "name": "sorry day",
+  "parts": [
+    {
+      "name": "Axxxx",
+      "bars": [
+        {
+          "ly":
+            "\n  \\set TabStaff.minimumFret = #2\n  <g, d g b d' g'>8\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  <fis, cis fis ais cis' fis'>16\n  r8.\n",
+          "chords": "g2 fis4"
+        },
+        {
+          "ly":
+            "\n  \\set TabStaff.minimumFret = #2\n  <g, d g b d' g'>8\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  <fis, cis fis ais cis' fis'>16\n  r8.\n",
+          "chords": "g2 fis4"
+        },
+        {
+          "ly":
+            "\n  <g, d g b d' g'>8\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  \\set TabStaff.minimumFret = #0\n  <fis, cis fis ais cis' e'>16\n  r16\n  <fis, cis fis ais cis' e'>16\n  r16\n",
+          "chords": "g2 fis4:7"
+        },
+        {
+          "ly":
+            "\n  \\set TabStaff.minimumFret = #0\n  r8\n  <fis cis' fis ais cis e>8\n  r8\n  <fis cis' fis ais cis e>8\n  r8\n  <fis cis' fis ais cis e>8\n",
+          "chords": "fis2."
+        },
+        {
+          "ly":
+            "\n  \\set TabStaff.minimumFret = #2\n  <g, d g b d' g'>8\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  <fis, cis fis ais cis' fis'>16\n  r8.\n",
+          "chords": "g2 fis4"
+        },
+        {
+          "ly":
+            "\n  \\set TabStaff.minimumFret = #2\n  <g, d g b d' g'>8\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  <fis, cis fis ais cis' fis'>16\n  r8.\n",
+          "chords": "g2 fis4"
+        },
+        {
+          "ly":
+            "\n  <g, d g b d' g'>8\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  <g, d g b d' g'>\n  \\set TabStaff.minimumFret = #0\n  <fis, cis fis ais cis' e'>16\n  r16\n  <fis, cis fis ais cis' e'>16\n  r16\n",
+          "chords": "g2 fis4:7"
+        },
+        {
+          "ly":
+            "\n  \\set TabStaff.minimumFret = #0\n  r8\n  <fis cis' fis ais cis e>8\n  r8\n  <fis cis' fis ais cis e>8\n  r8\n  <fis cis' fis ais cis e>8\n",
+          "chords": "fis2."
+        }
+      ]
+    },
+    {
+      "name": "B",
+      "bars": [
+        { "ly": "fis,8 g ais8 b d dis", "chords": "b2.:m" },
+        { "ly": "g,8 fis8 r4 r4", "chords": "b2.:m" }
+      ]
+    }
+  ],
+  "tempo": 120,
+  "signature": 3,
+  "struct": [ "A", "B" ]
+}

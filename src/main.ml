@@ -44,20 +44,35 @@ let main () =
 
     if do_all then (
       log "do all activated" ;
-      List.iter ( fun t ->
-	let () = List.iter ( fun notes ->
-	  List.iter ( fun tabs ->
-	    List.iter ( fun chords ->
-	      Score.generate_pdf t ~notes ~tabs ~chords ~drums:false
-	    ) [ true;false ]
-	  ) [true;false]
-	) [true;false] in
-	let () = Score.generate_midi_chords t ~drums:do_drums in
-	let () = Score.generate_midi t ~drums:do_drums in
-	let () = Score.generate_midi_parts t ~drums:do_drums in
-	let () = Score.generate_pdf_struct t in
-	  ()
-      ) scores
+      let files = List.fold_left ( fun files t ->
+	let files = List.fold_left ( fun files notes ->
+	  List.fold_left ( fun files tabs ->
+	    List.fold_left ( fun files chords ->
+	      files @ (Score.generate_pdf t ~notes ~tabs ~chords ~drums:false)
+	    ) files [ true;false ]
+	  ) files [true;false]
+	) files [true;false] in
+	let files = files @ (Score.generate_midi_chords t ~drums:do_drums) in
+	let files = files @ (Score.generate_midi t ~drums:do_drums) in
+	let files = files @ (Score.generate_midi_parts t ~drums:do_drums) in
+	let files = files @ (Score.generate_pdf_struct t) in
+	  files
+      ) [] scores in
+      let module Bu = Json_type.Build in
+      let j = Bu.objekt [
+	"files",Bu.list ( fun (name) ->
+	  let path = Filename.dirname name in
+	  let name = Filename.basename name in
+	  Bu.objekt [
+	    "path",Bu.string path ;
+	    "filename",Bu.string name ;
+	  ]
+	) files
+      ] in
+      let json_id = OptParse.Opt.get opt_json_id in
+      let filename = sprintf "return-%d.ret" json_id in
+	Json_io.save_json filename j
+	  
     ) else ()  ;
 
     if do_beautify then ( 
@@ -69,7 +84,7 @@ let main () =
 
     if (do_song &&  do_pdf) then (
       List.iter ( fun t ->
-	let () = Score.generate_pdf_struct t in
+	let _ = Score.generate_pdf_struct t in
 	  ()
       ) scores
     ) else () ;
@@ -77,7 +92,7 @@ let main () =
     if (do_midi) then (
       log "do midi" ;
       List.iter ( fun t -> 
-	let () = Score.generate_midi t ~drums:do_drums in
+	let _ = Score.generate_midi t ~drums:do_drums in
 	  ()
       ) scores
     ) else () ;
@@ -85,7 +100,7 @@ let main () =
 
     if (do_pdf) then (
       List.iter ( fun t ->
-	let () = Score.generate_pdf t ~tabs:do_tabs ~chords:do_chords ~notes:true ~drums:do_drums in
+	let _ = Score.generate_pdf t ~tabs:do_tabs ~chords:do_chords ~notes:true ~drums:do_drums in
 	  ()
       ) scores
     ) else () ;

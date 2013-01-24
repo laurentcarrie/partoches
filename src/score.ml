@@ -121,7 +121,7 @@ let generate_pdf_struct t =
       p fout "\\end{document}\n" ;
       close_out fout ;
       system (sprintf "cd .tmp && pdflatex %s ; pdflatex %s ; pdflatex %s" (Filename.basename filename) (Filename.basename filename)  (Filename.basename filename)  ) ;
-      ()
+      [ (Filename.chop_suffix filename ".tex")^".pdf"]
 	
 
 let remove_tab_reference s =
@@ -269,7 +269,8 @@ let generate_pdf ~notes ~tabs ~chords ~drums t = try
 	let filename = Str.global_replace (Str.regexp " ") "_" filename in
 	  internal_to_ly_file ~t ~filename ~ly_t:(Pdf (notes,tabs,chords,drums)) ;
       ) (struct_of_t t) ;
-      system (sprintf "lilypond --output %s %s "  (Filename.chop_extension filename) filename)
+      system (sprintf "lilypond --output %s %s "  (Filename.chop_extension filename) filename) ;
+      [(Filename.chop_suffix filename ".ly")^".pdf"]
   with
     | e -> eprintf "generate_pdf\n" ; raise e
 
@@ -277,21 +278,23 @@ let generate_midi t ~drums = try
     let name2 =  Str.global_replace (Str.regexp " ") "_" t.name in
     let filename = tmp_filename (sprintf "%s-midi.ly" name2) in
       internal_to_ly_file ~t ~filename ~ly_t:(Midi drums) ;
-      system (sprintf "lilypond --output %s %s" (Filename.chop_extension filename) filename)
+      system (sprintf "lilypond --output %s %s" (Filename.chop_extension filename) filename) ;
+      [ (Filename.chop_suffix filename ".ly")^".midi"]
   with
     | e -> eprintf "to_ly_midichords\n" ; raise e
 	
 let generate_midi_parts t ~drums =
-  List.iter ( fun (id,part) ->
+  List.fold_left ( fun files (id,part) ->
     let t = { t with name = sprintf "%s-%s" t.name part.Part.name ; structure = [ id ] } in 
       generate_midi t ~drums
-  ) t.parts
+  ) [] t.parts
 
 let generate_midi_chords t ~drums = try
     let name2 =  Str.global_replace (Str.regexp " ") "_" t.name in
     let filename = tmp_filename (sprintf "%s-chords.ly" name2) in
       internal_to_ly_file ~t ~filename ~ly_t:(Midi_chords drums) ;
-      system (sprintf "lilypond --output %s %s" (Filename.chop_extension filename ) filename)
+      system (sprintf "lilypond --output %s %s" (Filename.chop_extension filename ) filename) ;
+      [(Filename.chop_suffix filename ".ly")^".midi"]
   with
     | e -> eprintf "to_ly_midichords\n" ; raise e
 

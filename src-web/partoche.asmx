@@ -109,9 +109,10 @@ public class partoche : WebService
   }
 
 [WebMethod]
-public string generate(string fileName) {
-    try {
-   Console.WriteLine("generate all for {0}",fileName) ;
+public List<MyFileInfo> generate(string fileName) {
+  List<MyFileInfo> ll = new List<MyFileInfo>(); 
+  try {
+    Console.WriteLine("generate all for {0}",fileName) ;
     Random random = new Random();
     int randomNumber = random.Next(0,100) ;
       ProcessStartInfo startInfo = new ProcessStartInfo();
@@ -133,15 +134,29 @@ public string generate(string fileName) {
 	    }
 	  exeProcess.WaitForExit();
 	}
+
+      FileStream fs = new FileStream(System.Web.Hosting.HostingEnvironment.MapPath(string.Format("return-{0}.ret",randomNumber)), FileMode.Open); 
+      System.Json.JsonValue je = System.Json.JsonValue.Load (fs) ;
+      fs.Close () ;
+      
+      System.Json.JsonObject o = (System.Json.JsonObject) je ;
+      System.Json.JsonArray a = (System.Json.JsonArray) (o["files"]) ;
+      foreach ( System.Json.JsonValue v2 in a ) {
+	System.Json.JsonObject o2 = (System.Json.JsonObject) v2 ;
+	MyFileInfo fi = new MyFileInfo () ;
+	fi.filename = (string)(o2["filename"]) ;
+	fi.path = (string)(o2["path"]) ;
+	ll.Add(fi) ;
+      }
     }
     
     catch (Exception ex)
       {
         // return the error message if the operation fails
 	// ll.Add(ex.Message.ToString()) ;
+	Console.WriteLine(ex.Message.ToString()) ;
       }
-
-	return "ok" ;
+  return ll ;
 }
 
 [WebMethod]

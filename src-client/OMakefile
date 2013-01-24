@@ -20,4 +20,4 @@ make_prog(name) =
 #build : test.exe
 
 
-TS_InstallFiles(build,web,test.aspx)
+TS_InstallFiles(build,web,test.aspx download.aspx partoches.css)

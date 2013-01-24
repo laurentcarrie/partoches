@@ -24,3 +24,4 @@ mood_for_a_day.json : x
 
 
 TS_InstallFiles(build,web,mood_for_a_day.json)
+TS_InstallFiles(build,web,sorry_day.json)
